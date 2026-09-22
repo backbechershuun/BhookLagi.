@@ -1,9 +1,7 @@
 import { Link } from "react-router-dom";
 
-const BACKEND_URL = "http://localhost:5000";
-
 const RestaurantCard = ({ restaurant }) => {
-  const imageSrc = restaurant.image ? `${BACKEND_URL}${restaurant.image}` : "/images/placeholder.jpg";
+  const imageSrc = restaurant.image || "/images/placeholder.jpg";
   const rating = restaurant.rating ?? 0;
   const numReviews = restaurant.numReviews ?? 0;
 
