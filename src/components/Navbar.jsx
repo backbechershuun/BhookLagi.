@@ -127,7 +127,7 @@ const Navbar = () => {
 
       <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-stone-200/80 shadow-[0_1px_0_0_rgba(212,175,55,0.25)]">
         <nav
-          className={`max-w-7xl mx-auto grid items-center gap-6 px-0 py-4 ${
+          className={`max-w-7xl mx-auto grid items-center gap-3 sm:gap-6 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 ${
             isOwner ? "grid-cols-[auto_1fr]" : "grid-cols-[auto_1fr_auto]"
           }`}
         >
@@ -158,14 +158,14 @@ const Navbar = () => {
 
           {/* Customer-only: centered restaurant search */}
           {!isOwner && (
-            <form onSubmit={handleSearch} className="w-full max-w-md mx-auto">
+            <form onSubmit={handleSearch} className="w-full min-w-0 max-w-md mx-auto">
               <div className="relative">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
+                  className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
                 >
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
@@ -174,19 +174,22 @@ const Navbar = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search restaurants, cuisines, cities…"
-                  className="w-full rounded-full border border-stone-200 bg-stone-50/80 pl-11 pr-4 py-2.5 text-sm text-stone-700 placeholder:text-stone-400 shadow-inner transition-all duration-200 focus:outline-none focus:border-[#D4AF37] focus:bg-white focus:ring-2 focus:ring-[#D4AF37]/20"
+                  placeholder="Search restaurants…"
+                  className="w-full min-w-0 rounded-full border border-stone-200 bg-stone-50/80 pl-10 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-2.5 text-sm text-stone-700 placeholder:text-stone-400 shadow-inner transition-all duration-200 focus:outline-none focus:border-[#D4AF37] focus:bg-white focus:ring-2 focus:ring-[#D4AF37]/20"
                 />
               </div>
             </form>
           )}
 
           {/* Right-side nav */}
-          <div className="flex items-center gap-5 text-sm font-medium text-stone-700 flex-shrink-0 justify-self-end">
+          <div className="flex items-center gap-2.5 sm:gap-5 text-sm font-medium text-stone-700 flex-shrink-0 justify-self-end">
             {!isOwner && (
               <>
-                {/* Restaurants link — icon + gold underline */}
-                <Link to="/restaurants" className="group flex items-center gap-1.5 relative">
+                {/* Restaurants link — icon + gold underline. Hidden on
+                    mobile since it's redundant with "Reserve" in the
+                    avatar dropdown, and keeps the search bar from being
+                    squeezed on narrow screens. */}
+                <Link to="/restaurants" className="hidden sm:flex group items-center gap-1.5 relative">
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
