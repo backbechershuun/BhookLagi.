@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import api from "../api/axios.js";
 
-const BACKEND_URL = "http://localhost:5000";
 const emptyTable = { tableNumber: "", capacity: 2, location: "indoor" };
 const emptyMenuItem = {
   name: "",
@@ -492,7 +491,7 @@ const RestaurantManage = () => {
       fullPrice: item.fullPrice ?? "",
     });
     setMenuImage(null);
-    setMenuImagePreview(item.image ? `${BACKEND_URL}${item.image}` : null);
+    setMenuImagePreview(item.image || null);
   };
 
   const handleMenuImageChange = (e) => {
@@ -611,7 +610,7 @@ const RestaurantManage = () => {
       <div className="rounded-3xl border border-stone-200 bg-white p-6 mb-10 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-5">
         <div className="w-16 h-16 rounded-2xl overflow-hidden bg-stone-100 flex-shrink-0 flex items-center justify-center ring-2 ring-[#D4AF37]/20">
           {restaurant.image ? (
-            <img src={`${BACKEND_URL}${restaurant.image}`} alt={restaurant.name} className="w-full h-full object-cover" />
+            <img src={restaurant.image} alt={restaurant.name} className="w-full h-full object-cover" />
           ) : (
             <span className="text-2xl text-stone-300">🍽️</span>
           )}
@@ -674,7 +673,7 @@ const RestaurantManage = () => {
             <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
               <div className="relative h-36 rounded-xl overflow-hidden mb-4 bg-stone-100">
                 <img
-                  src={exteriorPreview || (restaurant.image ? `${BACKEND_URL}${restaurant.image}` : "/images/placeholder.jpg")}
+                  src={exteriorPreview || restaurant.image || "/images/placeholder.jpg"}
                   alt={restaurant.name}
                   className="w-full h-full object-cover"
                 />
@@ -704,7 +703,7 @@ const RestaurantManage = () => {
             <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
               <div className="relative h-36 rounded-xl overflow-hidden mb-4 bg-stone-100">
                 <img
-                  src={interiorPreview || (restaurant.interiorImage ? `${BACKEND_URL}${restaurant.interiorImage}` : "/images/placeholder.jpg")}
+                  src={interiorPreview || restaurant.interiorImage || "/images/placeholder.jpg"}
                   alt={`${restaurant.name} interior`}
                   className="w-full h-full object-cover"
                 />
@@ -755,7 +754,7 @@ const RestaurantManage = () => {
               >
                 <img
                   ref={imgRef}
-                  src={`${BACKEND_URL}${restaurant.interiorImage}`}
+                  src={restaurant.interiorImage}
                   alt="Interior layout"
                   onLoad={recalc}
                   className="w-full h-80 object-contain bg-stone-900 pointer-events-none"
@@ -1042,7 +1041,7 @@ const RestaurantManage = () => {
                         <div className="flex items-start gap-3 min-w-0">
                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-stone-100 flex-shrink-0 flex items-center justify-center">
                             {item.image ? (
-                              <img src={`${BACKEND_URL}${item.image}`} alt={item.name} className="w-full h-full object-cover" />
+                              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                             ) : (
                               <span className="text-stone-300 text-lg">🍽️</span>
                             )}
