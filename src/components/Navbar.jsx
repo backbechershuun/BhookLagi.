@@ -345,7 +345,7 @@ const Navbar = () => {
                       )}
                     </div>
 
-                    <div className={isOwner ? "p-2.5 space-y-2 bg-gradient-to-b from-stone-50/80 to-transparent" : "py-1.5"}>
+                    <div className={isOwner ? "p-2.5 space-y-2 bg-gradient-to-b from-stone-50/80 to-transparent" : ""}>
                       {isOwner ? (
                         <>
                           <Link
@@ -399,62 +399,72 @@ const Navbar = () => {
                           </button>
                         </>
                       ) : (
-                        <>
+                        <div className="p-2.5 space-y-2 bg-gradient-to-b from-stone-50/80 to-transparent -mx-0">
                           <Link
                             to="/restaurants"
                             onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                            className="flex items-center gap-3 rounded-xl border border-[#D4AF37]/30 bg-white px-3.5 py-3 text-sm font-semibold text-stone-800 shadow-sm hover:border-[#D4AF37]/60 hover:shadow-md hover:-translate-y-px transition-all duration-200 active:scale-[0.98] active:translate-y-0"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
+                            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#F7E7B0] to-[#D4AF37]/40 flex-shrink-0">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-800">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                              </svg>
+                            </span>
                             Reserve
                           </Link>
                           <Link
                             to="/my-bookings"
                             onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                            className="flex items-center gap-3 rounded-xl border border-[#D4AF37]/30 bg-white px-3.5 py-3 text-sm font-semibold text-stone-800 shadow-sm hover:border-[#D4AF37]/60 hover:shadow-md hover:-translate-y-px transition-all duration-200 active:scale-[0.98] active:translate-y-0"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#F7E7B0] to-[#D4AF37]/40 flex-shrink-0">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-800">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </span>
                             My Bookings
                           </Link>
                           <Link
                             to="/my-orders"
                             onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                            className="flex items-center gap-3 rounded-xl border border-[#D4AF37]/30 bg-white px-3.5 py-3 text-sm font-semibold text-stone-800 shadow-sm hover:border-[#D4AF37]/60 hover:shadow-md hover:-translate-y-px transition-all duration-200 active:scale-[0.98] active:translate-y-0"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 2a1 1 0 00-1 1v1H5a2 2 0 00-2 2v13a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-3V3a1 1 0 00-1-1H9zM7 8h10M7 12h10M7 16h6" />
-                            </svg>
+                            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#F7E7B0] to-[#D4AF37]/40 flex-shrink-0">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-800">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 2a1 1 0 00-1 1v1H5a2 2 0 00-2 2v13a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-3V3a1 1 0 00-1-1H9zM7 8h10M7 12h10M7 16h6" />
+                              </svg>
+                            </span>
                             Your Orders
                           </Link>
-                        </>
+                        </div>
                       )}
                     </div>
 
-                    <div className="border-t border-stone-100 py-1.5">
+                    <div className="border-t border-stone-100 p-2.5 space-y-2">
                       <Link
                         to="/help"
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                        className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
-                          <circle cx="12" cy="12" r="9" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 9a2.5 2.5 0 015 .5c0 1.5-2 1.75-2 3.25M12 17h.01" />
-                        </svg>
+                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-stone-100 flex-shrink-0">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-stone-500">
+                            <circle cx="12" cy="12" r="9" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 9a2.5 2.5 0 015 .5c0 1.5-2 1.75-2 3.25M12 17h.01" />
+                          </svg>
+                        </span>
                         Help &amp; Support
                       </Link>
                       <Link
                         to="/about"
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                        className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
-                          <circle cx="12" cy="12" r="9" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4M12 8h.01" />
-                        </svg>
+                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-stone-100 flex-shrink-0">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-stone-500">
+                            <circle cx="12" cy="12" r="9" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4M12 8h.01" />
+                          </svg>
+                        </span>
                         About
                       </Link>
                     </div>
