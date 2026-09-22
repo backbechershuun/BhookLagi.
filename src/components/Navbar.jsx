@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const Navbar = () => {
+const Navbar = ({ pendingCount = 0 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -151,6 +151,17 @@ const Navbar = () => {
                   Add a Restaurant
                 </Link>
                 <Link
+                  to="/owner/orders/preview"
+                  className="hidden lg:inline-flex items-center gap-2 rounded-xl bg-stone-900 text-white px-5 py-3 text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm"
+                >
+                  Preview Order
+                  {pendingCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-[11px] font-semibold text-stone-900">
+                      {pendingCount}
+                    </span>
+                  )}
+                </Link>
+                <Link
                   to="/owner"
                   className="hidden lg:inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-stone-900 to-stone-700 text-white px-4 py-1.5 shadow-sm hover:shadow-md hover:from-stone-800 hover:to-stone-600 transition-all duration-200 border border-[#D4AF37]/20"
                 >
@@ -235,6 +246,23 @@ const Navbar = () => {
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
                             Add a Restaurant
+                          </Link>
+                          <Link
+                            to="/owner/orders/preview"
+                            onClick={() => setMenuOpen(false)}
+                            className="flex items-center justify-between gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                          >
+                            <span className="flex items-center gap-2.5">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 2a1 1 0 00-1 1v1H5a2 2 0 00-2 2v13a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-3V3a1 1 0 00-1-1H9zM7 8h10M7 12h10M7 16h6" />
+                              </svg>
+                              Preview Order
+                            </span>
+                            {pendingCount > 0 && (
+                              <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-[11px] font-semibold text-stone-900">
+                                {pendingCount}
+                              </span>
+                            )}
                           </Link>
                         </>
                       ) : (
