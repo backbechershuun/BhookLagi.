@@ -267,7 +267,7 @@ const Navbar = () => {
                         <button
                           key={r._id}
                           onClick={() => goToRestaurantOrders(r._id)}
-                          className=""hidden lg:inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white px-4 py-2.5 text-sm font-medium shadow-sm hover:shadow-md hover:from-stone-800 hover:via-stone-700 hover:to-stone-800 transition-all duration-200 border border-[#D4AF37]/30"
+                          className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors text-left"
                         >
                           <span className="min-w-0">
                             <span className="block truncate font-medium text-stone-800">{r.name}</span>
