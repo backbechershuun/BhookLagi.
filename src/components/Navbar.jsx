@@ -284,7 +284,7 @@ const Navbar = () => {
 
                 <Link
                   to="/owner"
-                  className="hidden lg:inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white px-4 py-2.5 text-sm font-medium shadow-sm hover:shadow-md hover:from-stone-800 hover:via-stone-700 hover:to-stone-800 transition-all duration-200 border border-[#D4AF37]/30"
+                  className="hidden lg:inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-4 py-2.5 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#D4AF37]">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l8-4v18M13 9h6v12M9 9h.01M9 12h.01M9 15h.01" />
@@ -351,7 +351,7 @@ const Navbar = () => {
                           <Link
                             to="/owner"
                             onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 px-3.5 py-3 text-sm font-medium text-white shadow-sm border border-[#D4AF37]/30 transition-all duration-200 active:scale-[0.98]"
+                            className="flex items-center gap-2.5 rounded-xl border border-[#D4AF37]/30 bg-white px-3.5 py-3 text-sm font-medium text-stone-700 hover:border-[#D4AF37]/60 hover:bg-stone-50 transition-all duration-200 active:scale-[0.98]"
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#D4AF37] flex-shrink-0">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l8-4v18M13 9h6v12M9 9h.01M9 12h.01M9 15h.01" />
