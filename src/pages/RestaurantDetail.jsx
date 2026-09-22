@@ -3,8 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const BACKEND_URL = "http://localhost:5000";
-
 const zoneMeta = {
   indoor: { label: "Indoor", icon: "🏠" },
   outdoor: { label: "Outdoor", icon: "🌤️" },
@@ -185,13 +183,9 @@ const RestaurantDetail = () => {
     );
   }
 
-  const imageSrc = restaurant.image
-    ? `${BACKEND_URL}${restaurant.image}`
-    : "/images/placeholder.jpg";
+  const imageSrc = restaurant.image || "/images/placeholder.jpg";
 
-  const interiorImageSrc = restaurant.interiorImage
-    ? `${BACKEND_URL}${restaurant.interiorImage}`
-    : imageSrc;
+  const interiorImageSrc = restaurant.interiorImage || imageSrc;
 
   const groupedTables = tables.reduce((acc, t) => {
     const zone = t.location || "indoor";
