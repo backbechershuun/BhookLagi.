@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios.js";
 
-const BACKEND_URL = "http://localhost:5000";
-
 const MyRestaurants = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +67,7 @@ const MyRestaurants = () => {
               <div className="relative h-40 bg-stone-100 flex items-center justify-center">
                 {r.image ? (
                   <img
-                    src={`${BACKEND_URL}${r.image}`}
+                    src={r.image}
                     alt={r.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
