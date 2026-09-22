@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Inter", sans-serif;
+  background-color: #fdfaf7;
+  color: #1c1917;
+}
+
+h1, h2, h3, .font-display {
+  font-family: "Playfair Display", serif;
+}
