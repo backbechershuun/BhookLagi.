@@ -3,8 +3,6 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const BACKEND_URL = "http://localhost:5000";
-
 // Guests can pay this percentage now, or pay the full order now.
 // Nothing in between, and never less than this.
 const MIN_DEPOSIT_PERCENT = 40;
@@ -91,7 +89,7 @@ const ProductCard = ({ item, cart, updateQty, onOpenSizes }) => {
     <div className="rounded-xl border border-[#E9E9EB] bg-white overflow-hidden">
       <div className="relative aspect-square bg-[#F2F2F2]">
         {item.image ? (
-          <img src={`${BACKEND_URL}${item.image}`} alt={item.name} className="w-full h-full object-cover" />
+          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-3xl text-[#D9D9D9]">🍕</div>
         )}
@@ -339,7 +337,7 @@ const CartDrawer = ({
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-[#F2F2F2] flex-shrink-0 border border-[#E9E9EB]">
                     {l.item.image ? (
                       <img
-                        src={`${BACKEND_URL}${l.item.image}`}
+                        src={l.item.image}
                         alt={l.item.name}
                         className="w-full h-full object-cover"
                       />
