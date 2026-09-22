@@ -1,8 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import api from "../api/axios.js";
 
-const Navbar = ({ pendingCount = 0 }) => {
+// Returns every restaurant owned by the logged-in owner — same endpoint
+// MyRestaurants.jsx uses.
+const OWNER_RESTAURANTS_ENDPOINT = "/restaurants/mine";
+
+const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -10,6 +15,12 @@ const Navbar = ({ pendingCount = 0 }) => {
   const menuRef = useRef(null);
 
   const isOwner = user?.role === "owner";
+
+  // Pending-orders-across-all-restaurants state, used by the "Manage" dropdown below.
+  const [ownerRestaurants, setOwnerRestaurants] = useState([]);
+  const [loadingPending, setLoadingPending] = useState(false);
+  const [manageMenuOpen, setManageMenuOpen] = useState(false);
+  const manageRef = useRef(null);
 
   const handleLogout = () => {
     setMenuOpen(false);
@@ -28,6 +39,9 @@ const Navbar = ({ pendingCount = 0 }) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
       }
+      if (manageRef.current && !manageRef.current.contains(e.target)) {
+        setManageMenuOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -39,6 +53,60 @@ const Navbar = ({ pendingCount = 0 }) => {
       document.body.style.overflow = "";
     };
   }, [menuOpen]);
+
+  // Loads every restaurant this owner has, then the pending-booking count
+  // for each one, so the navbar always knows where orders are waiting —
+  // without the owner having to open each restaurant to check.
+  useEffect(() => {
+    if (!isOwner) return;
+
+    let cancelled = false;
+
+    const loadPendingAcrossRestaurants = async () => {
+      setLoadingPending(true);
+      try {
+        const { data: restaurants } = await api.get(OWNER_RESTAURANTS_ENDPOINT);
+
+        const withCounts = await Promise.all(
+          restaurants.map(async (r) => {
+            try {
+              const { data: bookings } = await api.get(`/bookings/restaurant/${r._id}`);
+              const pendingCount = bookings.filter((b) => b.status === "pending").length;
+              return { ...r, pendingCount };
+            } catch {
+              return { ...r, pendingCount: 0 };
+            }
+          })
+        );
+
+        if (!cancelled) setOwnerRestaurants(withCounts);
+      } catch {
+        if (!cancelled) setOwnerRestaurants([]);
+      } finally {
+        if (!cancelled) setLoadingPending(false);
+      }
+    };
+
+    loadPendingAcrossRestaurants();
+    // Refresh periodically so the badge doesn't go stale while the owner
+    // sits on another page.
+    const interval = setInterval(loadPendingAcrossRestaurants, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isOwner]);
+
+  const restaurantsWithPending = ownerRestaurants
+    .filter((r) => r.pendingCount > 0)
+    .sort((a, b) => b.pendingCount - a.pendingCount);
+
+  const totalPending = restaurantsWithPending.reduce((sum, r) => sum + r.pendingCount, 0);
+
+  const goToRestaurantOrders = (restaurantId) => {
+    setManageMenuOpen(false);
+    navigate(`/owner/restaurants/${restaurantId}/manage?filter=pending`);
+  };
 
   const initials = user?.name
     ?.split(" ")
@@ -138,34 +206,87 @@ const Navbar = ({ pendingCount = 0 }) => {
               </>
             )}
 
-            {/* Owner-only: quick links straight to their dashboard, and to add a new place */}
+            {/* Owner-only: three actions, now sharing one consistent premium
+                pill treatment (same height/padding/border/icon sizing)
+                instead of three different button styles. */}
             {isOwner && (
               <>
                 <Link
                   to="/owner/restaurants/new"
-                  className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-stone-200 text-stone-700 px-4 py-1.5 hover:border-[#D4AF37]/50 hover:text-stone-900 hover:bg-stone-50 transition-all duration-200"
+                  className="hidden lg:inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-4 py-2.5 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#D4AF37]">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                   Add a Restaurant
                 </Link>
-                <Link
-                  to="/owner/orders/preview"
-                  className="hidden lg:inline-flex items-center gap-2 rounded-xl bg-stone-900 text-white px-5 py-3 text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm"
-                >
-                  Preview Order
-                  {pendingCount > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-[11px] font-semibold text-stone-900">
-                      {pendingCount}
-                    </span>
-                  )}
-                </Link>
+
+                {/* Review orders — jumps straight to pending orders. If more
+                    than one restaurant has pending orders at once, opens a
+                    picker instead of guessing which one to visit. */}
+                <div className="relative hidden lg:block" ref={manageRef}>
+                  <button
+                    onClick={() => {
+                      if (restaurantsWithPending.length === 1) {
+                        goToRestaurantOrders(restaurantsWithPending[0]._id);
+                      } else if (restaurantsWithPending.length > 1) {
+                        setManageMenuOpen((prev) => !prev);
+                      } else {
+                        navigate("/owner");
+                      }
+                    }}
+                    disabled={loadingPending && ownerRestaurants.length === 0}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-4 py-2.5 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200 disabled:opacity-60"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#D4AF37]">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 2a1 1 0 00-1 1v1H5a2 2 0 00-2 2v13a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-3V3a1 1 0 00-1-1H9zM7 8h10M7 12h10M7 16h6" />
+                    </svg>
+                    Review orders
+                    {totalPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-[11px] font-semibold text-stone-900">
+                        {totalPending}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Picker — only relevant, and only rendered, when 2+
+                      restaurants have pending orders at the same time. */}
+                  <div
+                    className={`absolute right-0 top-full mt-3 w-72 origin-top-right rounded-2xl border border-stone-200 bg-white shadow-2xl shadow-stone-900/15 overflow-hidden transition-all duration-200 ease-out z-50 ${
+                      manageMenuOpen
+                        ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                        : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                    }`}
+                  >
+                    <div className="px-4 py-3 border-b border-stone-100 bg-stone-50/60">
+                      <p className="text-sm font-medium text-stone-900">Pending orders</p>
+                      <p className="text-xs text-stone-400">Choose which restaurant to visit</p>
+                    </div>
+                    <div className="py-1.5 max-h-72 overflow-y-auto">
+                      {restaurantsWithPending.map((r) => (
+                        <button
+                          key={r._id}
+                          onClick={() => goToRestaurantOrders(r._id)}
+                          className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors text-left"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium text-stone-800">{r.name}</span>
+                            {r.city && <span className="block text-xs text-stone-400 truncate">{r.city}</span>}
+                          </span>
+                          <span className="flex-shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-[11px] font-semibold text-stone-900">
+                            {r.pendingCount}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 <Link
                   to="/owner"
-                  className="hidden lg:inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-stone-900 to-stone-700 text-white px-4 py-1.5 shadow-sm hover:shadow-md hover:from-stone-800 hover:to-stone-600 transition-all duration-200 border border-[#D4AF37]/20"
+                  className="hidden lg:inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 text-white px-4 py-2.5 text-sm font-medium shadow-sm hover:shadow-md hover:from-stone-800 hover:via-stone-700 hover:to-stone-800 transition-all duration-200 border border-[#D4AF37]/30"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#D4AF37]">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l8-4v18M13 9h6v12M9 9h.01M9 12h.01M9 15h.01" />
                   </svg>
                   My Restaurants
@@ -224,15 +345,15 @@ const Navbar = ({ pendingCount = 0 }) => {
                       )}
                     </div>
 
-                    <div className="py-1.5">
+                    <div className={isOwner ? "p-2 space-y-1.5" : "py-1.5"}>
                       {isOwner ? (
                         <>
                           <Link
                             to="/owner"
                             onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                            className="flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 px-3.5 py-3 text-sm font-medium text-white shadow-sm border border-[#D4AF37]/30 transition-all duration-200 active:scale-[0.98]"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#D4AF37] flex-shrink-0">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l8-4v18M13 9h6v12M9 9h.01M9 12h.01M9 15h.01" />
                             </svg>
                             My Restaurants
@@ -240,30 +361,36 @@ const Navbar = ({ pendingCount = 0 }) => {
                           <Link
                             to="/owner/restaurants/new"
                             onClick={() => setMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                            className="flex items-center gap-2.5 rounded-xl border border-[#D4AF37]/30 bg-white px-3.5 py-3 text-sm font-medium text-stone-700 hover:border-[#D4AF37]/60 hover:bg-stone-50 transition-all duration-200 active:scale-[0.98]"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#D4AF37] flex-shrink-0">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
                             Add a Restaurant
                           </Link>
-                          <Link
-                            to="/owner/orders/preview"
-                            onClick={() => setMenuOpen(false)}
-                            className="flex items-center justify-between gap-2.5 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
+                          <button
+                            onClick={() => {
+                              setMenuOpen(false);
+                              if (restaurantsWithPending.length === 1) {
+                                goToRestaurantOrders(restaurantsWithPending[0]._id);
+                              } else {
+                                navigate("/owner");
+                              }
+                            }}
+                            className="w-full flex items-center justify-between gap-2.5 rounded-xl border border-[#D4AF37]/30 bg-white px-3.5 py-3 text-sm font-medium text-stone-700 hover:border-[#D4AF37]/60 hover:bg-stone-50 transition-all duration-200 active:scale-[0.98]"
                           >
                             <span className="flex items-center gap-2.5">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-stone-400">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-[#D4AF37] flex-shrink-0">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 2a1 1 0 00-1 1v1H5a2 2 0 00-2 2v13a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-3V3a1 1 0 00-1-1H9zM7 8h10M7 12h10M7 16h6" />
                               </svg>
-                              Preview Order
+                              Review orders
                             </span>
-                            {pendingCount > 0 && (
+                            {totalPending > 0 && (
                               <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-[11px] font-semibold text-stone-900">
-                                {pendingCount}
+                                {totalPending}
                               </span>
                             )}
-                          </Link>
+                          </button>
                         </>
                       ) : (
                         <>
