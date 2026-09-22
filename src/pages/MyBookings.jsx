@@ -3,8 +3,6 @@ import { Link } from "react-router-dom";
 import api from "../api/axios.js";
 import ReviewModal from "../components/ReviewModal.jsx";
 
-const BACKEND_URL = "http://localhost:5000";
-
 const statusStyles = {
   pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
   confirmed: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
@@ -255,7 +253,7 @@ const MyBookings = () => {
                     <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0 flex items-center justify-center ring-2 ring-[#D4AF37]/20">
                       {b.restaurant?.image ? (
                         <img
-                          src={`${BACKEND_URL}${b.restaurant.image}`}
+                          src={b.restaurant.image}
                           alt={b.restaurant?.name}
                           className="w-full h-full object-cover"
                         />
