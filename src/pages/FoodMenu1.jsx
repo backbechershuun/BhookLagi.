@@ -47,7 +47,7 @@ const FoodTypeIcon = ({ type }) => (
   </span>
 );
 
-// Compact +/- stepper used on cards and in the cart.
+// Compact +/- stepper used in the cart and the portion picker.
 const Stepper = ({ qty, onIncrement, onDecrement, size = "md", full = false }) => {
   const pad = size === "sm" ? "px-1.5 py-0.5" : "px-2 py-1";
   return (
@@ -78,127 +78,133 @@ const Stepper = ({ qty, onIncrement, onDecrement, size = "md", full = false }) =
   );
 };
 
-// One selectable line on a card: "Half  ₹180  [Add]" or a stepper once added.
-const OptionRow = ({ label, price, qty, onAdd, onIncrement, onDecrement }) => (
-  <div className="flex items-center justify-between gap-2">
-    <div className="min-w-0">
-      {label && (
-        <span className="text-[11px] font-bold uppercase tracking-wide mr-1.5" style={{ color: SUBTLE }}>
-          {label}
-        </span>
-      )}
-      <span className="text-sm font-bold tabular-nums" style={{ color: DARK }}>
-        ₹{price}
-      </span>
-    </div>
-    {qty > 0 ? (
-      <Stepper qty={qty} onIncrement={onIncrement} onDecrement={onDecrement} size="sm" />
-    ) : (
-      <button
-        onClick={onAdd}
-        className="rounded-lg border bg-white px-3.5 py-1 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-[#F0F7FC]"
-        style={{ borderColor: PRIMARY, color: PRIMARY }}
-      >
-        Add
-      </button>
-    )}
-  </div>
-);
+// Swiggy-style row: details on the left, image on the right with the ADD
+// button overlapping the image's bottom edge.
+const ProductCard = ({ item, cart, updateQty, onCustomise }) => {
+  const qtyOf = (portion) => cart[portion ? `${item._id}:${portion}` : item._id]?.qty || 0;
+  const totalQty = item.hasPortions ? qtyOf("half") + qtyOf("full") : qtyOf(null);
 
-// Half / Full tile: small-caps label, large price, full-width control. Once
-// added, the tile lifts with a blue border, soft tint and a gentle glow.
-const PortionTile = ({ label, price, qty, onAdd, onIncrement, onDecrement }) => {
-  const active = qty > 0;
+  const buttonBase =
+    "absolute -bottom-4 left-1/2 -translate-x-1/2 w-[96px] h-9 rounded-lg bg-white border border-[#E4E6E8] shadow-[0_3px_8px_rgba(0,0,0,0.15)] flex items-center justify-center text-sm font-extrabold uppercase select-none";
+
   return (
-    <div
-      className={`rounded-xl border p-2.5 transition-all duration-200 ${
-        active
-          ? "border-[#006DB7] bg-[#F0F7FC] shadow-[0_3px_10px_rgba(0,109,183,0.14)]"
-          : "border-[#E4E6E8] bg-[#FAFAFB] hover:border-[#9CC4E0]"
-      }`}
-    >
-      <p
-        className="text-[10px] font-bold uppercase tracking-[0.16em]"
-        style={{ color: active ? PRIMARY : SUBTLE }}
-      >
-        {label}
-      </p>
-      <p className="text-[17px] font-extrabold tabular-nums leading-tight mt-0.5" style={{ color: DARK }}>
-        ₹{price}
-      </p>
-      <div className="mt-2.5">
-        {active ? (
-          <Stepper qty={qty} onIncrement={onIncrement} onDecrement={onDecrement} size="sm" full />
-        ) : (
+    <div className="flex items-start justify-between gap-4 py-6">
+      {/* Details */}
+      <div className="min-w-0 flex-1">
+        <FoodTypeIcon type={item.foodType} />
+        <h3 className="mt-2 text-base font-semibold leading-snug" style={{ color: DARK }}>
+          {item.name}
+        </h3>
+        <p className="mt-0.5 text-sm font-medium tabular-nums" style={{ color: INK }}>
+          {item.hasPortions ? `₹${item.halfPrice} – ₹${item.fullPrice}` : `₹${item.price}`}
+        </p>
+        {item.description && (
+          <p className="mt-3 text-sm leading-relaxed line-clamp-2" style={{ color: SUBTLE }}>
+            {item.description}
+          </p>
+        )}
+      </div>
+
+      {/* Image + ADD */}
+      <div className="relative flex-shrink-0 flex flex-col items-center">
+        <div className="w-[118px] h-[118px] sm:w-[156px] sm:h-[144px] rounded-2xl overflow-hidden bg-[#F2F2F2]">
+          {item.image ? (
+            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-4xl text-[#D9D9D9]">🍕</div>
+          )}
+        </div>
+
+        {totalQty === 0 ? (
           <button
-            onClick={onAdd}
-            className="w-full rounded-lg border bg-white py-1.5 text-xs font-bold uppercase tracking-wide transition-colors hover:bg-[#006DB7] hover:text-white"
-            style={{ borderColor: PRIMARY, color: PRIMARY }}
+            onClick={() => (item.hasPortions ? onCustomise(item) : updateQty(item, null, 1))}
+            className={`${buttonBase} hover:bg-[#F0F7FC] transition-colors`}
+            style={{ color: PRIMARY }}
           >
             Add
           </button>
+        ) : item.hasPortions ? (
+          <button onClick={() => onCustomise(item)} className={`${buttonBase} gap-2`} style={{ color: PRIMARY }}>
+            <span style={{ color: INK }}>{totalQty}</span>
+            <span className="text-base leading-none">+</span>
+          </button>
+        ) : (
+          <div className={`${buttonBase} justify-between px-3`} style={{ color: PRIMARY }}>
+            <button onClick={() => updateQty(item, null, -1)} aria-label="Decrease quantity" className="text-lg leading-none">
+              −
+            </button>
+            <span style={{ color: INK }}>{totalQty}</span>
+            <button onClick={() => updateQty(item, null, 1)} aria-label="Increase quantity" className="text-lg leading-none">
+              +
+            </button>
+          </div>
         )}
+
+        {item.hasPortions && <p className="mt-6 text-[11px]" style={{ color: SUBTLE }}>Customisable</p>}
       </div>
     </div>
   );
 };
 
-// A dish tile. Half and Full are shown right on the card, each with its own
-// Add button, so there's no size sheet to open.
-const ProductCard = ({ item, cart, updateQty }) => {
-  const qtyOf = (portion) => cart[portion ? `${item._id}:${portion}` : item._id]?.qty || 0;
+// Half / Full picker, opened from a "Customisable" card.
+const PortionSheet = ({ item, cart, updateQty, onClose }) => {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const rows = [
+    { portion: "half", label: "Half", price: item.halfPrice },
+    { portion: "full", label: "Full", price: item.fullPrice },
+  ];
 
   return (
-    <div className="flex flex-col h-full rounded-xl border border-[#E9E9EB] bg-white overflow-hidden">
-      <div className="relative aspect-[4/3] bg-[#F2F2F2]">
-        {item.image ? (
-          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl text-[#D9D9D9]">🍕</div>
-        )}
-        <div className="absolute top-2 left-2">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl">
+        <div className="flex items-center gap-2">
           <FoodTypeIcon type={item.foodType} />
+          <h3 className="text-base font-bold" style={{ color: DARK }}>{item.name}</h3>
         </div>
-      </div>
+        <p className="text-xs mt-1" style={{ color: SUBTLE }}>Choose your portion</p>
 
-      <div className="flex flex-col flex-1 px-3 pt-3 pb-3.5">
-        <h3 className="text-sm font-bold leading-snug line-clamp-2" style={{ color: DARK }}>
-          {item.name}
-        </h3>
-        {item.description && (
-          <p className="text-xs text-[#8B8B8B] mt-1 leading-relaxed line-clamp-2">{item.description}</p>
-        )}
-
-        <div className="mt-auto pt-3">
-          {item.hasPortions ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <PortionTile
-                label="Half"
-                price={item.halfPrice}
-                qty={qtyOf("half")}
-                onAdd={() => updateQty(item, "half", 1)}
-                onIncrement={() => updateQty(item, "half", 1)}
-                onDecrement={() => updateQty(item, "half", -1)}
-              />
-              <PortionTile
-                label="Full"
-                price={item.fullPrice}
-                qty={qtyOf("full")}
-                onAdd={() => updateQty(item, "full", 1)}
-                onIncrement={() => updateQty(item, "full", 1)}
-                onDecrement={() => updateQty(item, "full", -1)}
-              />
-            </div>
-          ) : (
-            <OptionRow
-              price={item.price}
-              qty={qtyOf(null)}
-              onAdd={() => updateQty(item, null, 1)}
-              onIncrement={() => updateQty(item, null, 1)}
-              onDecrement={() => updateQty(item, null, -1)}
-            />
-          )}
+        <div className="mt-4 divide-y divide-[#E9E9EB]">
+          {rows.map(({ portion, label, price }) => {
+            const qty = cart[`${item._id}:${portion}`]?.qty || 0;
+            return (
+              <div key={portion} className="flex items-center justify-between py-3">
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: INK }}>{label}</p>
+                  <p className="text-sm tabular-nums" style={{ color: SUBTLE }}>₹{price}</p>
+                </div>
+                {qty > 0 ? (
+                  <Stepper
+                    qty={qty}
+                    onIncrement={() => updateQty(item, portion, 1)}
+                    onDecrement={() => updateQty(item, portion, -1)}
+                  />
+                ) : (
+                  <button
+                    onClick={() => updateQty(item, portion, 1)}
+                    className="w-[84px] rounded-lg border bg-white py-1.5 text-sm font-extrabold uppercase shadow-sm hover:bg-[#F0F7FC]"
+                    style={{ borderColor: "#E4E6E8", color: PRIMARY }}
+                  >
+                    Add
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
+
+        <button
+          onClick={onClose}
+          className="mt-4 w-full rounded-xl py-3 text-sm font-bold text-white"
+          style={{ backgroundColor: PRIMARY }}
+        >
+          Done
+        </button>
       </div>
     </div>
   );
@@ -461,6 +467,7 @@ const FoodMenu = () => {
   const [search, setSearch] = useState("");
   const [vegOnly, setVegOnly] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [portionItemId, setPortionItemId] = useState(null);
 
   const sectionRefs = useRef({});
 
@@ -524,6 +531,8 @@ const FoodMenu = () => {
   const totalItems = cartLines.reduce((sum, l) => sum + l.qty, 0);
   const depositAmount = Math.ceil((subtotal * depositPercent) / 100);
   const canProceed = totalItems > 0 && !paying;
+
+  const portionItem = portionItemId ? menu.find((m) => m._id === portionItemId) : null;
 
   const scrollToCategory = (cat) => {
     sectionRefs.current[cat]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -698,30 +707,31 @@ const FoodMenu = () => {
 
       {/* Menu (left) + order & payment sidebar (right on desktop) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-8 lg:items-start">
-        <div>
+        <div className="bg-white rounded-xl px-4 sm:px-6">
           {loading ? (
-            <div className="rounded-xl border border-[#E9E9EB] bg-white p-14 text-center text-[#8B8B8B] text-sm">
-              Loading menu…
-            </div>
+            <div className="p-14 text-center text-[#8B8B8B] text-sm">Loading menu…</div>
           ) : menu.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#E9E9EB] bg-white p-14 text-center text-[#8B8B8B] text-sm">
-              This restaurant hasn't added a menu yet.
-            </div>
+            <div className="p-14 text-center text-[#8B8B8B] text-sm">This restaurant hasn't added a menu yet.</div>
           ) : filteredMenu.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#E9E9EB] bg-white p-14 text-center text-[#8B8B8B] text-sm">
-              No dishes match your search.
-            </div>
+            <div className="p-14 text-center text-[#8B8B8B] text-sm">No dishes match your search.</div>
           ) : (
             categories.map((cat) => (
-              <div key={cat} ref={(el) => (sectionRefs.current[cat] = el)} className="scroll-mt-44 mb-8">
-                <h2 className="text-lg font-extrabold mb-3" style={{ color: DARK }}>
+              <div key={cat} ref={(el) => (sectionRefs.current[cat] = el)} className="scroll-mt-44 mb-2">
+                <h2 className="text-lg font-extrabold py-4" style={{ color: DARK }}>
                   {cat} <span className="text-sm font-normal text-[#8B8B8B]">({grouped[cat].length})</span>
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="divide-y divide-[#E9E9EB]">
                   {grouped[cat].map((item) => (
-                    <ProductCard key={item._id} item={item} cart={cart} updateQty={updateQty} />
+                    <ProductCard
+                      key={item._id}
+                      item={item}
+                      cart={cart}
+                      updateQty={updateQty}
+                      onCustomise={(it) => setPortionItemId(it._id)}
+                    />
                   ))}
                 </div>
+                <div className="h-2 -mx-4 sm:-mx-6 bg-[#F0F0F5] mt-2" />
               </div>
             ))
           )}
@@ -753,6 +763,15 @@ const FoodMenu = () => {
       )}
 
       {cartOpen && <CartSheet onClose={() => setCartOpen(false)} {...panelProps} />}
+
+      {portionItem && (
+        <PortionSheet
+          item={portionItem}
+          cart={cart}
+          updateQty={updateQty}
+          onClose={() => setPortionItemId(null)}
+        />
+      )}
     </div>
   );
 };
