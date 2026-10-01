@@ -102,8 +102,7 @@ const RestaurantDetail = () => {
   const [date, setDate] = useState(availableDays[0].iso);
   const [timeSlot, setTimeSlot] = useState(timeSlots[4].value);
   const [partySize, setPartySize] = useState(2);
-  const [tables, setTables] = useState([]); // tables FREE for the chosen slot
-  const [allTables, setAllTables] = useState([]); // every table of the restaurant
+  const [tables, setTables] = useState([]); // tables returned by availability (may include isBooked flag)
   const [selectedTable, setSelectedTable] = useState(null);
   const [status, setStatus] = useState({ type: "", message: "" });
 
@@ -122,17 +121,6 @@ const RestaurantDetail = () => {
       params: { date, timeSlot, partySize },
     });
     setTables(data);
-
-    // Also load the full table list so tables missing from the availability
-    // result can be drawn as "booked". If this endpoint doesn't exist on your
-    // backend, change the URL below — the page still works without it
-    // (booked tables just won't be shown).
-    try {
-      const { data: everything } = await api.get(`/tables/${id}`);
-      setAllTables(Array.isArray(everything) ? everything : []);
-    } catch {
-      setAllTables([]);
-    }
   };
 
   useEffect(() => {
@@ -196,23 +184,25 @@ const RestaurantDetail = () => {
     );
   }
 
-  const imageSrc = restaurant.image
-    ? `${BACKEND_URL}${restaurant.image}`
-    : "/images/placeholder.jpg";
+  // Cloudinary (or any CDN) returns a full https URL — use it as-is.
+  // Older local uploads are relative paths like /uploads/x.jpg — prefix the backend.
+  const resolveImage = (path) => {
+    if (!path) return null;
+    return /^https?:\/\//i.test(path) ? path : `${BACKEND_URL}${path}`;
+  };
 
-  const interiorImageSrc = restaurant.interiorImage
-    ? `${BACKEND_URL}${restaurant.interiorImage}`
-    : imageSrc;
+  const imageSrc = resolveImage(restaurant.image) || "/images/placeholder.jpg";
 
-  // A table is "booked" when it exists in the full list but is not in the
-  // availability result (or the backend explicitly flags it isBooked).
-  const availableIds = new Set(tables.map((t) => t._id));
-  const sourceTables = allTables.length > 0 ? allTables : tables;
-  const displayTables = sourceTables.map((t) => ({
+  const interiorImageSrc = resolveImage(restaurant.interiorImage) || imageSrc;
+
+  // A table is drawn as "booked" when the availability data flags it
+  // with isBooked: true.
+  const displayTables = tables.map((t) => ({
     ...t,
-    isBooked: t.isBooked === true || !availableIds.has(t._id),
+    isBooked: t.isBooked === true,
   }));
   const bookedCount = displayTables.filter((t) => t.isBooked).length;
+  const availableCount = displayTables.length - bookedCount;
 
   const groupedTables = displayTables.reduce((acc, t) => {
     const zone = t.location || "indoor";
@@ -523,7 +513,7 @@ const RestaurantDetail = () => {
               <div className="flex items-center gap-4 text-[11px] font-medium text-neutral-500">
                 <span className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {tables.length} available
+                  {availableCount} available
                 </span>
                 {bookedCount > 0 && (
                   <span className="flex items-center gap-1.5">
