@@ -82,9 +82,10 @@ const Home = () => (
   
   {/* <RestaurantList/> */}
     
-      <HowItWorks />
+      
       <FeaturedRestaurants />
       <QuickFilters />
+    <HowItWorks />
       <TrustStrip />
       <Footer />
   </div>
