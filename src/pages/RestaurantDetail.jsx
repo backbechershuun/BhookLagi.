@@ -571,21 +571,21 @@ const RestaurantDetail = () => {
                           style={{ marginLeft: `${rowIndents[rowIdx % rowIndents.length]}px` }}
                         >
                           {row.map((t) => {
-                            // BOOKED — red, disabled, small "B" badge
+                            // BOOKED — normal-looking tile, only a small red "B" icon, not clickable
                             if (t.isBooked) {
                               return (
                                 <button
                                   key={t._id}
                                   disabled
                                   title={`Table ${t.tableNumber} · Booked`}
-                                  className="relative flex-shrink-0 flex flex-col items-center justify-center gap-0.5 rounded-xl w-14 h-14 bg-red-50 border border-red-200 text-red-400 cursor-not-allowed"
+                                  className="relative flex-shrink-0 flex flex-col items-center justify-center gap-0.5 rounded-xl w-14 h-14 bg-white text-neutral-400 border border-neutral-200 shadow-sm cursor-not-allowed"
                                 >
                                   <svg
                                     viewBox="0 0 24 24"
                                     fill="none"
                                     stroke="currentColor"
                                     strokeWidth="1.4"
-                                    className="w-3.5 h-3.5 text-red-300"
+                                    className="w-3.5 h-3.5 text-neutral-300"
                                   >
                                     <rect x="4" y="9" width="16" height="4" rx="1" />
                                     <path d="M6 13v4M18 13v4M9 13v2M15 13v2" strokeLinecap="round" />
@@ -593,8 +593,8 @@ const RestaurantDetail = () => {
                                   <span className="text-[9px] font-bold leading-none tracking-wide">
                                     T{t.tableNumber}
                                   </span>
-                                  <span className="text-[7px] leading-none text-red-400">
-                                    Booked
+                                  <span className="text-[7px] leading-none text-neutral-400">
+                                    {t.capacity} seats
                                   </span>
 
                                   <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center shadow-sm">
