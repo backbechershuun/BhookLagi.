@@ -184,16 +184,26 @@ const RestaurantDetail = () => {
     );
   }
 
-  // Cloudinary (or any CDN) returns a full https URL — use it as-is.
-  // Older local uploads are relative paths like /uploads/x.jpg — prefix the backend.
-  const resolveImage = (path) => {
+  // Images live on Cloudinary, so the stored value is already a full URL and is
+  // used as-is. It can be a plain string or an object like
+  // { url, secure_url, public_id }. Only old local paths (/uploads/...) get
+  // the backend prefix.
+  const resolveImage = (value) => {
+    if (!value) return null;
+    const path = typeof value === "string" ? value : value.secure_url || value.url || "";
     if (!path) return null;
-    return /^https?:\/\//i.test(path) ? path : `${BACKEND_URL}${path}`;
+    return /^(https?:)?\/\//i.test(path) ? path : `${BACKEND_URL}${path}`;
   };
 
-  const imageSrc = resolveImage(restaurant.image) || "/images/placeholder.jpg";
+  const imageSrc =
+    resolveImage(restaurant.image) ||
+    resolveImage(restaurant.imageUrl) ||
+    "/images/placeholder.jpg";
 
-  const interiorImageSrc = resolveImage(restaurant.interiorImage) || imageSrc;
+  const interiorImageSrc =
+    resolveImage(restaurant.interiorImage) ||
+    resolveImage(restaurant.interiorImageUrl) ||
+    imageSrc;
 
   // A table is drawn as "booked" when the availability data flags it
   // with isBooked: true.
