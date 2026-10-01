@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
+const BACKEND_URL = "http://localhost:5000";
+
 const zoneMeta = {
   indoor: { label: "Indoor", icon: "🏠" },
   outdoor: { label: "Outdoor", icon: "🌤️" },
@@ -100,11 +102,12 @@ const RestaurantDetail = () => {
   const [date, setDate] = useState(availableDays[0].iso);
   const [timeSlot, setTimeSlot] = useState(timeSlots[4].value);
   const [partySize, setPartySize] = useState(2);
-  const [tables, setTables] = useState([]);
+  const [tables, setTables] = useState([]); // tables FREE for the chosen slot
+  const [allTables, setAllTables] = useState([]); // every table of the restaurant
   const [selectedTable, setSelectedTable] = useState(null);
   const [status, setStatus] = useState({ type: "", message: "" });
 
-  // NEW — image box measurement for the interior photo
+  // Image box measurement for the interior photo
   const { containerRef, imgRef, box, recalc } = useImageBox();
 
   useEffect(() => {
@@ -114,10 +117,22 @@ const RestaurantDetail = () => {
   const checkAvailability = async () => {
     setStatus({ type: "", message: "" });
     setSelectedTable(null);
+
     const { data } = await api.get(`/tables/${id}/availability`, {
       params: { date, timeSlot, partySize },
     });
     setTables(data);
+
+    // Also load the full table list so tables missing from the availability
+    // result can be drawn as "booked". If this endpoint doesn't exist on your
+    // backend, change the URL below — the page still works without it
+    // (booked tables just won't be shown).
+    try {
+      const { data: everything } = await api.get(`/tables/${id}`);
+      setAllTables(Array.isArray(everything) ? everything : []);
+    } catch {
+      setAllTables([]);
+    }
   };
 
   useEffect(() => {
@@ -125,9 +140,7 @@ const RestaurantDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurant, date, timeSlot, partySize]);
 
-  // CHANGED — booking is no longer created here. This just hands the chosen
-  // table + slot off to the food-ordering / payment step, which is the page
-  // that actually creates the booking once a deposit is paid.
+  // Booking is created on the menu/payment page once a deposit is paid.
   const handleContinueToMenu = () => {
     if (!user) {
       navigate("/login");
@@ -183,18 +196,34 @@ const RestaurantDetail = () => {
     );
   }
 
-  const imageSrc = restaurant.image || "/images/placeholder.jpg";
+  const imageSrc = restaurant.image
+    ? `${BACKEND_URL}${restaurant.image}`
+    : "/images/placeholder.jpg";
 
-  const interiorImageSrc = restaurant.interiorImage || imageSrc;
+  const interiorImageSrc = restaurant.interiorImage
+    ? `${BACKEND_URL}${restaurant.interiorImage}`
+    : imageSrc;
 
-  const groupedTables = tables.reduce((acc, t) => {
+  // A table is "booked" when it exists in the full list but is not in the
+  // availability result (or the backend explicitly flags it isBooked).
+  const availableIds = new Set(tables.map((t) => t._id));
+  const sourceTables = allTables.length > 0 ? allTables : tables;
+  const displayTables = sourceTables.map((t) => ({
+    ...t,
+    isBooked: t.isBooked === true || !availableIds.has(t._id),
+  }));
+  const bookedCount = displayTables.filter((t) => t.isBooked).length;
+
+  const groupedTables = displayTables.reduce((acc, t) => {
     const zone = t.location || "indoor";
     if (!acc[zone]) acc[zone] = [];
     acc[zone].push(t);
     return acc;
   }, {});
 
-  const positionedTables = tables.filter((t) => t.positionX != null && t.positionY != null);
+  const positionedTables = displayTables.filter(
+    (t) => t.positionX != null && t.positionY != null
+  );
 
   return (
     <div className="bg-neutral-50 min-h-screen">
@@ -371,18 +400,34 @@ const RestaurantDetail = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent pointer-events-none" />
 
-            {/* Clickable table hotspots — using each table's REAL stored position, mapped through the image box */}
+            {/* Table hotspots — using each table's REAL stored position, mapped through the image box */}
             {box.width > 0 &&
               positionedTables.map((t) => {
+                const pos = {
+                  left: box.offsetX + (t.positionX / 100) * box.width,
+                  top: box.offsetY + (t.positionY / 100) * box.height,
+                };
+
+                // BOOKED — small always-visible red marker with "B", not clickable
+                if (t.isBooked) {
+                  return (
+                    <span
+                      key={t._id}
+                      style={pos}
+                      title={`Table ${t.tableNumber} · Booked`}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-red-600 border-2 border-white/90 text-white text-[11px] font-bold flex items-center justify-center shadow-lg shadow-red-900/40 cursor-not-allowed select-none"
+                    >
+                      B
+                    </span>
+                  );
+                }
+
                 const isSelected = selectedTable?._id === t._id;
                 return (
                   <button
                     key={t._id}
                     onClick={() => setSelectedTable(t)}
-                    style={{
-                      left: box.offsetX + (t.positionX / 100) * box.width,
-                      top: box.offsetY + (t.positionY / 100) * box.height,
-                    }}
+                    style={pos}
                     title={`Table ${t.tableNumber} · seats ${t.capacity}`}
                     className={`group absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-xl w-16 h-16 transition-all duration-200 cursor-pointer ${
                       isSelected
@@ -446,6 +491,17 @@ const RestaurantDetail = () => {
           {positionedTables.length > 0 && (
             <p className="text-xs text-neutral-400 mt-2 text-center">
               Hover over the photo to find a table, then click to select it.
+              {bookedCount > 0 && (
+                <>
+                  {" "}
+                  <span className="inline-flex items-center gap-1 text-red-500 font-medium">
+                    <span className="w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[8px] font-bold inline-flex items-center justify-center">
+                      B
+                    </span>
+                    = already booked
+                  </span>
+                </>
+              )}
             </p>
           )}
         </div>
@@ -463,16 +519,24 @@ const RestaurantDetail = () => {
                 Select your table
               </h2>
             </div>
-            {tables.length > 0 && (
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-neutral-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {tables.length} table{tables.length !== 1 ? "s" : ""} available
+            {displayTables.length > 0 && (
+              <div className="flex items-center gap-4 text-[11px] font-medium text-neutral-500">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {tables.length} available
+                </span>
+                {bookedCount > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                    {bookedCount} booked
+                  </span>
+                )}
               </div>
             )}
           </div>
           <div className="h-px bg-gradient-to-r from-[#D4AF37]/60 via-neutral-200 to-transparent mb-6" />
 
-          {tables.length === 0 ? (
+          {displayTables.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-10 text-center">
               <p className="text-neutral-500 text-sm">
                 No tables free for this slot. Try another time.
@@ -507,6 +571,39 @@ const RestaurantDetail = () => {
                           style={{ marginLeft: `${rowIndents[rowIdx % rowIndents.length]}px` }}
                         >
                           {row.map((t) => {
+                            // BOOKED — red, disabled, small "B" badge
+                            if (t.isBooked) {
+                              return (
+                                <button
+                                  key={t._id}
+                                  disabled
+                                  title={`Table ${t.tableNumber} · Booked`}
+                                  className="relative flex-shrink-0 flex flex-col items-center justify-center gap-0.5 rounded-xl w-14 h-14 bg-red-50 border border-red-200 text-red-400 cursor-not-allowed"
+                                >
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.4"
+                                    className="w-3.5 h-3.5 text-red-300"
+                                  >
+                                    <rect x="4" y="9" width="16" height="4" rx="1" />
+                                    <path d="M6 13v4M18 13v4M9 13v2M15 13v2" strokeLinecap="round" />
+                                  </svg>
+                                  <span className="text-[9px] font-bold leading-none tracking-wide">
+                                    T{t.tableNumber}
+                                  </span>
+                                  <span className="text-[7px] leading-none text-red-400">
+                                    Booked
+                                  </span>
+
+                                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center shadow-sm">
+                                    B
+                                  </span>
+                                </button>
+                              );
+                            }
+
                             const isSelected = selectedTable?._id === t._id;
                             return (
                               <button
@@ -613,9 +710,8 @@ const RestaurantDetail = () => {
             </div>
           )}
 
-          {/* CHANGED — this now moves to the food/menu + payment step instead
-              of booking immediately. Booking itself happens after the deposit
-              is paid there. */}
+          {/* Moves to the food/menu + payment step; the booking itself is
+              created there once the deposit is paid. */}
           <button
             disabled={!selectedTable}
             onClick={handleContinueToMenu}
