@@ -408,16 +408,31 @@ const RestaurantDetail = () => {
                   top: box.offsetY + (t.positionY / 100) * box.height,
                 };
 
-                // BOOKED — small always-visible red marker with "B", not clickable
+                // BOOKED — premium glossy marker with gold bezel, grounded with a floor shadow
                 if (t.isBooked) {
                   return (
                     <span
                       key={t._id}
                       style={pos}
-                      title={`Table ${t.tableNumber} · Booked`}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-red-600 border-2 border-white/90 text-white text-[11px] font-bold flex items-center justify-center shadow-lg shadow-red-900/40 cursor-not-allowed select-none"
+                      aria-label={`Table ${t.tableNumber} booked`}
+                      className="group absolute -translate-x-1/2 -translate-y-1/2 cursor-not-allowed select-none"
                     >
-                      B
+                      {/* soft floor shadow so the marker sits in the 3D scene */}
+                      <span className="absolute left-1/2 -bottom-1.5 h-1.5 w-6 -translate-x-1/2 rounded-full bg-black/50 blur-[3px]" />
+
+                      {/* gold bezel */}
+                      <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#F3DC8A] via-[#D4AF37] to-[#8A6A14] p-[2px] shadow-[0_4px_10px_rgba(0,0,0,0.55)]">
+                        {/* red gem */}
+                        <span className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[radial-gradient(circle_at_30%_25%,#ff6b6b_0%,#dc2626_45%,#7f1010_100%)] text-[12px] font-bold text-white shadow-[inset_0_-2px_3px_rgba(0,0,0,0.35)]">
+                          <span className="pointer-events-none absolute left-1 top-0.5 h-2 w-3 rounded-full bg-white/40 blur-[1px]" />
+                          <span className="relative drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]">B</span>
+                        </span>
+                      </span>
+
+                      {/* hover label */}
+                      <span className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#D4AF37]/40 bg-stone-900/90 px-2.5 py-1 text-[10px] font-medium text-[#EBD182] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        T{t.tableNumber} · Booked
+                      </span>
                     </span>
                   );
                 }
@@ -495,7 +510,7 @@ const RestaurantDetail = () => {
                 <>
                   {" "}
                   <span className="inline-flex items-center gap-1 text-red-500 font-medium">
-                    <span className="w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[8px] font-bold inline-flex items-center justify-center">
+                    <span className="w-3.5 h-3.5 rounded-full bg-red-600 ring-1 ring-[#D4AF37] text-white text-[8px] font-bold inline-flex items-center justify-center">
                       B
                     </span>
                     = already booked
