@@ -30,6 +30,7 @@ const ICONS = {
   star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z",
   heart: "M12 20s-7-4.4-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.6-9 9-9 9z",
   tag: "M3 12V4h8l10 10-8 8L3 12zM7.5 8.5h.01",
+  mic: "M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3zM19 11a7 7 0 01-14 0M12 18v3M8 21h8",
 };
 
 const Badge = ({ count, className = "" }) =>
@@ -40,6 +41,10 @@ const Badge = ({ count, className = "" }) =>
       {count > 99 ? "99+" : count}
     </span>
   ) : null;
+
+// Browser speech recognition (Chrome, Edge, Safari). Not available in Firefox.
+const SpeechRecognitionAPI =
+  typeof window !== "undefined" ? window.SpeechRecognition || window.webkitSpeechRecognition : null;
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -54,9 +59,11 @@ const Navbar = () => {
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
   const [ownerRestaurants, setOwnerRestaurants] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
+  const [listening, setListening] = useState(false);
 
   const menuRef = useRef(null);
   const manageRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const handleLogout = () => {
     setMenuOpen(false);
@@ -70,6 +77,51 @@ const Navbar = () => {
     const q = searchQuery.trim();
     setMobileSearchOpen(false);
     navigate(q ? `/restaurants?search=${encodeURIComponent(q)}` : "/restaurants");
+  };
+
+  // Voice search: tap the mic, speak, and it searches automatically when you stop.
+  const handleVoiceSearch = () => {
+    if (!SpeechRecognitionAPI) {
+      alert("Voice search isn't supported in this browser. Try Chrome, Edge or Safari.");
+      return;
+    }
+
+    // Tapping again while listening stops it.
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = "en-IN"; // use "hi-IN" for Hindi or "en-US" for US English
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setListening(true);
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results)
+        .map((r) => r[0].transcript)
+        .join("");
+      setSearchQuery(transcript); // live text in the search box
+      if (e.results[e.results.length - 1].isFinal) {
+        const q = transcript.trim();
+        setMobileSearchOpen(false);
+        navigate(q ? `/restaurants?search=${encodeURIComponent(q)}` : "/restaurants");
+      }
+    };
+
+    recognition.onerror = (e) => {
+      setListening(false);
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        alert("Microphone access is blocked. Allow the microphone in your browser settings and try again.");
+      }
+    };
+
+    recognition.onend = () => setListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
   };
 
   // On every navigation: close all menus, and keep the search box in sync with the URL.
@@ -110,6 +162,9 @@ const Navbar = () => {
       document.body.style.overflow = "";
     };
   }, [drawerOpen]);
+
+  // Stop the microphone if the navbar unmounts.
+  useEffect(() => () => recognitionRef.current?.abort(), []);
 
   // Pending bookings across all of the owner's restaurants.
   useEffect(() => {
@@ -172,6 +227,10 @@ const Navbar = () => {
 
   const iconBtn =
     "relative flex h-10 w-10 items-center justify-center rounded-full text-stone-700 transition-colors hover:bg-stone-100 active:bg-stone-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]";
+
+  const micBtn = `flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] ${
+    listening ? "animate-pulse bg-red-100 text-red-600" : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+  }`;
 
   const drawerLink =
     "flex items-center gap-5 rounded-xl px-3 py-2.5 text-sm text-stone-800 transition-colors hover:bg-stone-100";
@@ -372,11 +431,19 @@ const Navbar = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search restaurants, cuisines, cities"
+              placeholder={listening ? "Listening…" : "Search restaurants, cuisines, cities"}
               className="h-10 min-w-0 flex-1 rounded-full border border-stone-300 bg-white px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-[#D4AF37] focus:outline-none"
             />
             <button type="submit" className={iconBtn} aria-label="Search">
               <Icon d={ICONS.search} />
+            </button>
+            <button
+              type="button"
+              onClick={handleVoiceSearch}
+              className={micBtn}
+              aria-label={listening ? "Stop voice search" : "Search with your voice"}
+            >
+              <Icon d={ICONS.mic} className="h-5 w-5" />
             </button>
           </form>
         ) : null}
@@ -394,25 +461,37 @@ const Navbar = () => {
             {renderLogo()}
           </div>
 
-          {/* Center: search (customers) */}
+          {/* Center: search + mic (customers) */}
           <div className="flex justify-center">
             {!isOwner && (
-              <form onSubmit={handleSearch} className="hidden w-full max-w-xl sm:flex" role="search">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search restaurants, cuisines, cities"
-                  className="h-11 min-w-0 flex-1 rounded-l-full border border-stone-300 bg-white pl-5 pr-3 text-sm text-stone-800 placeholder:text-stone-400 shadow-inner focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
-                />
+              <div className="hidden w-full max-w-2xl items-center gap-3 sm:flex">
+                <form onSubmit={handleSearch} className="flex flex-1" role="search">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={listening ? "Listening…" : "Search restaurants, cuisines, cities"}
+                    className="h-11 min-w-0 flex-1 rounded-l-full border border-stone-300 bg-white pl-5 pr-3 text-sm text-stone-800 placeholder:text-stone-400 shadow-inner focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Search"
+                    className="flex h-11 w-16 items-center justify-center rounded-r-full border border-l-0 border-stone-300 bg-stone-50 text-stone-700 transition-colors hover:bg-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
+                  >
+                    <Icon d={ICONS.search} className="h-5 w-5" />
+                  </button>
+                </form>
+
                 <button
-                  type="submit"
-                  aria-label="Search"
-                  className="flex h-11 w-16 items-center justify-center rounded-r-full border border-l-0 border-stone-300 bg-stone-50 text-stone-700 transition-colors hover:bg-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
+                  type="button"
+                  onClick={handleVoiceSearch}
+                  className={`${micBtn} md:h-11 md:w-11`}
+                  aria-label={listening ? "Stop voice search" : "Search with your voice"}
+                  title="Search with your voice"
                 >
-                  <Icon d={ICONS.search} className="h-5 w-5" />
+                  <Icon d={ICONS.mic} className="h-5 w-5" />
                 </button>
-              </form>
+              </div>
             )}
           </div>
 
