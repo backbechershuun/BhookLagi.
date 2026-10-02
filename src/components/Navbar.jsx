@@ -5,6 +5,10 @@ import api from "../api/axios.js";
 
 const OWNER_RESTAURANTS_ENDPOINT = "/restaurants/mine";
 
+// Table booking is live. Flip this to true when online food ordering launches
+// and the "Order Food" / "My Orders" links will appear automatically.
+const ORDERS_ENABLED = false;
+
 // Small helper so every icon shares the same stroke style.
 const Icon = ({ d, className = "w-6 h-6" }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden="true">
@@ -30,6 +34,7 @@ const ICONS = {
   star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z",
   heart: "M12 20s-7-4.4-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.6-9 9-9 9z",
   tag: "M3 12V4h8l10 10-8 8L3 12zM7.5 8.5h.01",
+  mic: "M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3zM19 11a7 7 0 01-14 0M12 18v3M8 21h8",
 };
 
 const Badge = ({ count, className = "" }) =>
@@ -40,6 +45,10 @@ const Badge = ({ count, className = "" }) =>
       {count > 99 ? "99+" : count}
     </span>
   ) : null;
+
+// Browser speech recognition (Chrome, Edge, Safari). Not available in Firefox.
+const SpeechRecognitionAPI =
+  typeof window !== "undefined" ? window.SpeechRecognition || window.webkitSpeechRecognition : null;
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -54,9 +63,11 @@ const Navbar = () => {
   const [manageMenuOpen, setManageMenuOpen] = useState(false);
   const [ownerRestaurants, setOwnerRestaurants] = useState([]);
   const [loadingPending, setLoadingPending] = useState(false);
+  const [listening, setListening] = useState(false);
 
   const menuRef = useRef(null);
   const manageRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const handleLogout = () => {
     setMenuOpen(false);
@@ -70,6 +81,51 @@ const Navbar = () => {
     const q = searchQuery.trim();
     setMobileSearchOpen(false);
     navigate(q ? `/restaurants?search=${encodeURIComponent(q)}` : "/restaurants");
+  };
+
+  // Voice search: tap the mic, speak, and it searches automatically when you stop.
+  const handleVoiceSearch = () => {
+    if (!SpeechRecognitionAPI) {
+      alert("Voice search isn't supported in this browser. Try Chrome, Edge or Safari.");
+      return;
+    }
+
+    // Tapping again while listening stops it.
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = "en-IN"; // use "hi-IN" for Hindi or "en-US" for US English
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setListening(true);
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results)
+        .map((r) => r[0].transcript)
+        .join("");
+      setSearchQuery(transcript); // live text in the search box
+      if (e.results[e.results.length - 1].isFinal) {
+        const q = transcript.trim();
+        setMobileSearchOpen(false);
+        navigate(q ? `/restaurants?search=${encodeURIComponent(q)}` : "/restaurants");
+      }
+    };
+
+    recognition.onerror = (e) => {
+      setListening(false);
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        alert("Microphone access is blocked. Allow the microphone in your browser settings and try again.");
+      }
+    };
+
+    recognition.onend = () => setListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
   };
 
   // On every navigation: close all menus, and keep the search box in sync with the URL.
@@ -110,6 +166,9 @@ const Navbar = () => {
       document.body.style.overflow = "";
     };
   }, [drawerOpen]);
+
+  // Stop the microphone if the navbar unmounts.
+  useEffect(() => () => recognitionRef.current?.abort(), []);
 
   // Pending bookings across all of the owner's restaurants.
   useEffect(() => {
@@ -173,6 +232,10 @@ const Navbar = () => {
   const iconBtn =
     "relative flex h-10 w-10 items-center justify-center rounded-full text-stone-700 transition-colors hover:bg-stone-100 active:bg-stone-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]";
 
+  const micBtn = `flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] ${
+    listening ? "animate-pulse bg-red-100 text-red-600" : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+  }`;
+
   const drawerLink =
     "flex items-center gap-5 rounded-xl px-3 py-2.5 text-sm text-stone-800 transition-colors hover:bg-stone-100";
 
@@ -187,7 +250,7 @@ const Navbar = () => {
           items: [
             { to: "/owner", label: "My Restaurants", icon: ICONS.restaurants },
             { to: "/owner/restaurants/new", label: "Add a Restaurant", icon: ICONS.plus },
-            { action: "review", label: "Review orders", icon: ICONS.orders },
+            { action: "review", label: "Pending bookings", icon: ICONS.calendar },
           ],
         },
         {
@@ -203,6 +266,8 @@ const Navbar = () => {
           items: [
             { to: "/", label: "Home", icon: ICONS.home },
             { to: "/restaurants", label: "Book a Table", icon: ICONS.calendar },
+            // Replace the route below with your real ordering page when you build it.
+            ...(ORDERS_ENABLED ? [{ to: "/order-online", label: "Order Food", icon: ICONS.orders }] : []),
           ],
         },
         {
@@ -213,19 +278,17 @@ const Navbar = () => {
             { to: "/offers", label: "Offers & Deals", icon: ICONS.tag },
           ],
         },
-        ...(user
-          ? [
-              {
-                title: "You",
-                items: [
-                  { to: "/my-bookings", label: "My Bookings", icon: ICONS.calendar },
-                  { to: "/my-orders", label: "My Orders", icon: ICONS.orders },
-                  { to: "/favorites", label: "Favourites", icon: ICONS.heart },
-                  { to: "/profile", label: "Profile", icon: ICONS.user },
-                ],
-              },
-            ]
-          : []),
+      ];
+
+  // Right-side account menu (opens from the avatar, YouTube-style): personal stuff only.
+  // The left drawer is for getting around (browse, book, run the business) and never repeats these.
+  const accountItems = isOwner
+    ? [{ to: "/profile", label: "Your profile", icon: ICONS.user }]
+    : [
+        { to: "/my-bookings", label: "My Bookings", icon: ICONS.calendar },
+        ...(ORDERS_ENABLED ? [{ to: "/my-orders", label: "My Orders", icon: ICONS.orders }] : []),
+        { to: "/favorites", label: "Favourites", icon: ICONS.heart },
+        { to: "/profile", label: "Your profile", icon: ICONS.user },
       ];
 
   const renderLogo = (onClick) => (
@@ -274,20 +337,9 @@ const Navbar = () => {
           {renderLogo(() => setDrawerOpen(false))}
         </div>
 
-        {/* Profile block */}
-        <div className="border-b border-stone-200 px-4 pb-4 pt-1">
-          {user ? (
-            <Link to="/profile" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3 rounded-xl p-1 hover:bg-stone-50">
-              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-800 to-stone-950 text-sm font-semibold text-white ring-2 ring-[#D4AF37]/50">
-                {initials}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-stone-900">{user.name}</span>
-                <span className="block truncate text-xs text-stone-500">{user.email}</span>
-                {isOwner && <span className="block text-xs text-amber-700">Owner account</span>}
-              </span>
-            </Link>
-          ) : (
+        {/* Sign-in prompt (guests only) — account details live in the right-side menu */}
+        {!user && (
+          <div className="border-b border-stone-200 px-4 pb-4 pt-1">
             <Link
               to="/login"
               onClick={() => setDrawerOpen(false)}
@@ -298,8 +350,8 @@ const Navbar = () => {
               </span>
               <span className="text-sm font-medium text-stone-800">Sign in to book a table</span>
             </Link>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Feature sections */}
         <div className="flex-1 overflow-y-auto px-3 py-3">
@@ -372,11 +424,19 @@ const Navbar = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search restaurants, cuisines, cities"
+              placeholder={listening ? "Listening…" : "Search restaurants, cuisines, cities"}
               className="h-10 min-w-0 flex-1 rounded-full border border-stone-300 bg-white px-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-[#D4AF37] focus:outline-none"
             />
             <button type="submit" className={iconBtn} aria-label="Search">
               <Icon d={ICONS.search} />
+            </button>
+            <button
+              type="button"
+              onClick={handleVoiceSearch}
+              className={micBtn}
+              aria-label={listening ? "Stop voice search" : "Search with your voice"}
+            >
+              <Icon d={ICONS.mic} className="h-5 w-5" />
             </button>
           </form>
         ) : null}
@@ -394,25 +454,37 @@ const Navbar = () => {
             {renderLogo()}
           </div>
 
-          {/* Center: search (customers) */}
+          {/* Center: search + mic (customers) */}
           <div className="flex justify-center">
             {!isOwner && (
-              <form onSubmit={handleSearch} className="hidden w-full max-w-xl sm:flex" role="search">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search restaurants, cuisines, cities"
-                  className="h-11 min-w-0 flex-1 rounded-l-full border border-stone-300 bg-white pl-5 pr-3 text-sm text-stone-800 placeholder:text-stone-400 shadow-inner focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
-                />
+              <div className="hidden w-full max-w-2xl items-center gap-3 sm:flex">
+                <form onSubmit={handleSearch} className="flex flex-1" role="search">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={listening ? "Listening…" : "Search restaurants, cuisines, cities"}
+                    className="h-11 min-w-0 flex-1 rounded-l-full border border-stone-300 bg-white pl-5 pr-3 text-sm text-stone-800 placeholder:text-stone-400 shadow-inner focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="Search"
+                    className="flex h-11 w-16 items-center justify-center rounded-r-full border border-l-0 border-stone-300 bg-stone-50 text-stone-700 transition-colors hover:bg-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
+                  >
+                    <Icon d={ICONS.search} className="h-5 w-5" />
+                  </button>
+                </form>
+
                 <button
-                  type="submit"
-                  aria-label="Search"
-                  className="flex h-11 w-16 items-center justify-center rounded-r-full border border-l-0 border-stone-300 bg-stone-50 text-stone-700 transition-colors hover:bg-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
+                  type="button"
+                  onClick={handleVoiceSearch}
+                  className={`${micBtn} md:h-11 md:w-11`}
+                  aria-label={listening ? "Stop voice search" : "Search with your voice"}
+                  title="Search with your voice"
                 >
-                  <Icon d={ICONS.search} className="h-5 w-5" />
+                  <Icon d={ICONS.mic} className="h-5 w-5" />
                 </button>
-              </form>
+              </div>
             )}
           </div>
 
@@ -445,8 +517,8 @@ const Navbar = () => {
                     disabled={loadingPending && ownerRestaurants.length === 0}
                     className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-5 py-2.5 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200 disabled:opacity-60"
                   >
-                    <Icon d={ICONS.orders} className="h-4 w-4 text-[#D4AF37]" />
-                    Review orders
+                    <Icon d={ICONS.calendar} className="h-4 w-4 text-[#D4AF37]" />
+                    Pending bookings
                     <Badge count={totalPending} />
                   </button>
 
@@ -456,7 +528,7 @@ const Navbar = () => {
                     }`}
                   >
                     <div className="border-b border-stone-100 px-4 py-3">
-                      <p className="text-sm font-medium text-stone-900">Pending orders</p>
+                      <p className="text-sm font-medium text-stone-900">Pending bookings</p>
                       <p className="text-xs text-stone-500">Choose which restaurant to visit</p>
                     </div>
                     <div className="max-h-72 overflow-y-auto py-1">
@@ -502,33 +574,33 @@ const Navbar = () => {
                     menuOpen ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
                   }`}
                 >
-                  <div className="flex items-center gap-3 border-b border-stone-100 px-4 py-3.5">
-                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-stone-900 text-sm font-semibold text-white">
+                  {/* Header: big avatar + name + email + profile link */}
+                  <div className="flex items-start gap-4 border-b border-stone-200 px-5 py-4">
+                    <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-800 to-stone-950 text-base font-semibold text-white ring-2 ring-[#D4AF37]/50">
                       {initials}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-stone-900">{user.name}</p>
-                      <p className="truncate text-xs text-stone-500">{user.email}</p>
+                      <p className="truncate text-base font-medium text-stone-900">{user.name}</p>
+                      <p className="truncate text-sm text-stone-500">{user.email}</p>
                       {isOwner && <p className="mt-0.5 text-xs text-amber-700">Owner account</p>}
+                      <Link
+                        to="/profile"
+                        onClick={() => setMenuOpen(false)}
+                        className="mt-1.5 inline-block text-sm font-medium text-[#8a6d12] hover:underline"
+                      >
+                        View your profile
+                      </Link>
                     </div>
                   </div>
 
-                  <div className="border-b border-stone-100 py-1.5">
-                    <Link to="/my-orders" onClick={() => setMenuOpen(false)} className={dropdownLink}>
-                      <Icon d={ICONS.orders} className="h-5 w-5 text-stone-500" />
-                      My Orders
-                    </Link>
-                    <Link to="/profile" onClick={() => setMenuOpen(false)} className={dropdownLink}>
-                      <Icon d={ICONS.user} className="h-5 w-5 text-stone-500" />
-                      Profile
-                    </Link>
-                  </div>
-
+                  {/* Account features */}
                   <div className="py-1.5">
-                    <button onClick={handleLogout} className={`${dropdownLink} w-full text-red-600 hover:bg-red-50`}>
-                      <Icon d={ICONS.logout} className="h-5 w-5" />
-                      Log out
-                    </button>
+                    {accountItems.map((item) => (
+                      <Link key={item.label} to={item.to} onClick={() => setMenuOpen(false)} className={dropdownLink}>
+                        <Icon d={item.icon} className="h-5 w-5 text-stone-500" />
+                        {item.label}
+                      </Link>
+                    ))}
                   </div>
                 </div>
               </div>
