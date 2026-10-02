@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../api/axios.js";
 
@@ -44,9 +44,10 @@ const Badge = ({ count, className = "" }) =>
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isOwner = user?.role === "owner";
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get("search") || "");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -70,6 +71,16 @@ const Navbar = () => {
     setMobileSearchOpen(false);
     navigate(q ? `/restaurants?search=${encodeURIComponent(q)}` : "/restaurants");
   };
+
+  // On every navigation: close all menus, and keep the search box in sync with the URL.
+  useEffect(() => {
+    setDrawerOpen(false);
+    setMenuOpen(false);
+    setManageMenuOpen(false);
+    setMobileSearchOpen(false);
+    const q = new URLSearchParams(location.search).get("search");
+    setSearchQuery(location.pathname === "/restaurants" && q ? q : "");
+  }, [location.pathname, location.search]);
 
   // Close dropdowns on outside click / Escape.
   useEffect(() => {
@@ -217,7 +228,7 @@ const Navbar = () => {
           : []),
       ];
 
-  const Logo = ({ onClick }) => (
+  const renderLogo = (onClick) => (
     <Link
       to={isOwner ? "/owner" : "/"}
       onClick={onClick}
@@ -252,15 +263,15 @@ const Navbar = () => {
       />
       <aside
         aria-hidden={!drawerOpen}
-        className={`fixed left-0 top-0 z-50 flex h-full w-64 flex-col bg-white shadow-xl transition-transform duration-200 ease-out ${
-          drawerOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed left-0 top-0 z-50 flex h-full w-64 flex-col bg-white shadow-xl transition-[transform,visibility] duration-200 ease-out ${
+          drawerOpen ? "visible translate-x-0" : "invisible -translate-x-full"
         }`}
       >
         <div className="flex h-14 items-center gap-3 px-4">
           <button className={iconBtn} onClick={() => setDrawerOpen(false)} aria-label="Close menu">
             <Icon d={ICONS.menu} />
           </button>
-          <Logo onClick={() => setDrawerOpen(false)} />
+          {renderLogo(() => setDrawerOpen(false))}
         </div>
 
         {/* Profile block */}
@@ -380,7 +391,7 @@ const Navbar = () => {
             <button className={iconBtn} onClick={() => setDrawerOpen(true)} aria-label="Open menu">
               <Icon d={ICONS.menu} />
             </button>
-            <Logo />
+            {renderLogo()}
           </div>
 
           {/* Center: search (customers) */}
