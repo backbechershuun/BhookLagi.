@@ -278,7 +278,6 @@ const Navbar = () => {
                 title: "You",
                 items: [
                   { to: "/my-bookings", label: "My Bookings", icon: ICONS.calendar },
-                  { to: "/my-orders", label: "My Orders", icon: ICONS.orders },
                   { to: "/favorites", label: "Favourites", icon: ICONS.heart },
                   { to: "/profile", label: "Profile", icon: ICONS.user },
                 ],
@@ -592,22 +591,15 @@ const Navbar = () => {
                     </div>
                   </div>
 
-                  <div className="border-b border-stone-100 py-1.5">
-                    <Link to="/my-orders" onClick={() => setMenuOpen(false)} className={dropdownLink}>
-                      <Icon d={ICONS.orders} className="h-5 w-5 text-stone-500" />
-                      My Orders
+                  <div className="py-1.5">
+                    <Link to="/my-bookings" onClick={() => setMenuOpen(false)} className={dropdownLink}>
+                      <Icon d={ICONS.calendar} className="h-5 w-5 text-stone-500" />
+                      My Bookings
                     </Link>
                     <Link to="/profile" onClick={() => setMenuOpen(false)} className={dropdownLink}>
                       <Icon d={ICONS.user} className="h-5 w-5 text-stone-500" />
                       Profile
                     </Link>
-                  </div>
-
-                  <div className="py-1.5">
-                    <button onClick={handleLogout} className={`${dropdownLink} w-full text-red-600 hover:bg-red-50`}>
-                      <Icon d={ICONS.logout} className="h-5 w-5" />
-                      Log out
-                    </button>
                   </div>
                 </div>
               </div>
