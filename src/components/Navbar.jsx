@@ -26,6 +26,10 @@ const ICONS = {
   info: "M12 16v-4M12 8h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
   logout: "M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1",
   user: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0",
+  clock: "M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z",
+  heart: "M12 20s-7-4.4-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.6-9 9-9 9z",
+  tag: "M3 12V4h8l10 10-8 8L3 12zM7.5 8.5h.01",
 };
 
 const Badge = ({ count, className = "" }) =>
@@ -164,19 +168,51 @@ const Navbar = () => {
   const dropdownLink =
     "flex items-center gap-4 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-100 transition-colors";
 
-  // Drawer content differs by role.
-  const drawerMain = isOwner
+  // Drawer sections differ by role. `to` = route link, `action: "review"` = pending-orders shortcut.
+  const drawerSections = isOwner
     ? [
-        { to: "/owner", label: "My Restaurants", icon: ICONS.restaurants },
-        { to: "/owner/restaurants/new", label: "Add a Restaurant", icon: ICONS.plus },
+        {
+          title: "Dashboard",
+          items: [
+            { to: "/owner", label: "My Restaurants", icon: ICONS.restaurants },
+            { to: "/owner/restaurants/new", label: "Add a Restaurant", icon: ICONS.plus },
+            { action: "review", label: "Review orders", icon: ICONS.orders },
+          ],
+        },
+        {
+          title: "Manage",
+          items: [
+            { to: "/owner/slots", label: "Manage Slots", icon: ICONS.clock },
+            { to: "/owner/reviews", label: "Customer Reviews", icon: ICONS.star },
+          ],
+        },
       ]
     : [
-        { to: "/", label: "Home", icon: ICONS.home },
-        { to: "/restaurants", label: "Restaurants", icon: ICONS.restaurants },
+        {
+          items: [
+            { to: "/", label: "Home", icon: ICONS.home },
+            { to: "/restaurants", label: "Book a Table", icon: ICONS.calendar },
+          ],
+        },
+        {
+          title: "Explore",
+          items: [
+            { to: "/restaurants?sort=rating", label: "Top Rated", icon: ICONS.star },
+            { to: "/restaurants?open=now", label: "Open Now", icon: ICONS.clock },
+            { to: "/offers", label: "Offers & Deals", icon: ICONS.tag },
+          ],
+        },
         ...(user
           ? [
-              { to: "/my-bookings", label: "My Bookings", icon: ICONS.calendar },
-              { to: "/my-orders", label: "Your Orders", icon: ICONS.orders },
+              {
+                title: "You",
+                items: [
+                  { to: "/my-bookings", label: "My Bookings", icon: ICONS.calendar },
+                  { to: "/my-orders", label: "My Orders", icon: ICONS.orders },
+                  { to: "/favorites", label: "Favourites", icon: ICONS.heart },
+                  { to: "/profile", label: "Profile", icon: ICONS.user },
+                ],
+              },
             ]
           : []),
       ];
@@ -227,33 +263,66 @@ const Navbar = () => {
           <Logo onClick={() => setDrawerOpen(false)} />
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 pb-4">
-          <div className="space-y-0.5">
-            {drawerMain.map((item) => (
-              <Link key={item.to} to={item.to} onClick={() => setDrawerOpen(false)} className={drawerLink}>
-                <Icon d={item.icon} className="h-5 w-5 text-stone-600" />
-                {item.label}
-              </Link>
-            ))}
-            {isOwner && (
-              <button
-                onClick={() => {
-                  setDrawerOpen(false);
-                  if (restaurantsWithPending.length === 1) goToRestaurantOrders(restaurantsWithPending[0]._id);
-                  else navigate("/owner");
-                }}
-                className={`${drawerLink} w-full`}
-              >
-                <Icon d={ICONS.orders} className="h-5 w-5 text-stone-600" />
-                <span className="flex-1 text-left">Review orders</span>
-                <Badge count={totalPending} />
-              </button>
-            )}
-          </div>
+        {/* Profile block */}
+        <div className="border-b border-stone-200 px-4 pb-4 pt-1">
+          {user ? (
+            <Link to="/profile" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3 rounded-xl p-1 hover:bg-stone-50">
+              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-800 to-stone-950 text-sm font-semibold text-white ring-2 ring-[#D4AF37]/50">
+                {initials}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-stone-900">{user.name}</span>
+                <span className="block truncate text-xs text-stone-500">{user.email}</span>
+                {isOwner && <span className="block text-xs text-amber-700">Owner account</span>}
+              </span>
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              onClick={() => setDrawerOpen(false)}
+              className="flex items-center gap-3 rounded-xl p-1 hover:bg-stone-50"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-full border border-stone-300 text-stone-500">
+                <Icon d={ICONS.user} />
+              </span>
+              <span className="text-sm font-medium text-stone-800">Sign in to book a table</span>
+            </Link>
+          )}
+        </div>
 
-          <div className="my-3 border-t border-stone-200" />
+        {/* Feature sections */}
+        <div className="flex-1 overflow-y-auto px-3 py-3">
+          {drawerSections.map((section, i) => (
+            <div key={i} className={i > 0 ? "mt-3 border-t border-stone-200 pt-3" : ""}>
+              {section.title && <p className="px-3 pb-1 text-sm font-semibold text-stone-900">{section.title}</p>}
+              <div className="space-y-0.5">
+                {section.items.map((item) =>
+                  item.action === "review" ? (
+                    <button
+                      key={item.label}
+                      onClick={() => {
+                        setDrawerOpen(false);
+                        if (restaurantsWithPending.length === 1) goToRestaurantOrders(restaurantsWithPending[0]._id);
+                        else navigate("/owner");
+                      }}
+                      className={`${drawerLink} w-full`}
+                    >
+                      <Icon d={item.icon} className="h-5 w-5 text-stone-600" />
+                      <span className="flex-1 text-left">{item.label}</span>
+                      <Badge count={totalPending} />
+                    </button>
+                  ) : (
+                    <Link key={item.label} to={item.to} onClick={() => setDrawerOpen(false)} className={drawerLink}>
+                      <Icon d={item.icon} className="h-5 w-5 text-stone-600" />
+                      {item.label}
+                    </Link>
+                  )
+                )}
+              </div>
+            </div>
+          ))}
 
-          <div className="space-y-0.5">
+          <div className="mt-3 space-y-0.5 border-t border-stone-200 pt-3">
             <Link to="/help" onClick={() => setDrawerOpen(false)} className={drawerLink}>
               <Icon d={ICONS.help} className="h-5 w-5 text-stone-600" />
               Help &amp; Support
@@ -264,6 +333,19 @@ const Navbar = () => {
             </Link>
           </div>
         </div>
+
+        {/* Logout pinned to bottom */}
+        {user && (
+          <div className="border-t border-stone-200 p-3">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-5 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            >
+              <Icon d={ICONS.logout} className="h-5 w-5" />
+              Log out
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* ---------- Top bar ---------- */}
