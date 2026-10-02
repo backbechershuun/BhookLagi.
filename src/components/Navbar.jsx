@@ -188,11 +188,11 @@ const Navbar = () => {
       aria-label="BhookLagi home"
       className="flex flex-shrink-0 items-center gap-2"
     >
-      <span className="block h-9 w-9 overflow-hidden rounded-full bg-white ring-2 ring-[#D4AF37]/60">
+      <span className="block h-10 w-10 md:h-12 md:w-12 overflow-hidden rounded-full bg-white ring-2 ring-[#D4AF37]/60">
         <img src="/Icon2.png" alt="" className="h-full w-full object-cover" />
       </span>
       <div className="hidden flex-col sm:flex">
-        <img src="/Bhooklagi2.png" alt="BhookLagi" className={`w-auto object-contain ${isOwner ? "h-6" : "h-8"}`} />
+        <img src="/Bhooklagi2.png" alt="BhookLagi" className={`w-auto object-contain ${isOwner ? "h-7 md:h-8" : "h-8 md:h-10"}`} />
         {isOwner && (
           <span className="mt-0.5 flex w-fit items-center gap-1 rounded-full border border-[#D4AF37]/40 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 py-[2px] pl-1.5 pr-2 text-[8px] font-semibold uppercase leading-none tracking-[0.2em] text-[#EBD182]">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-2 w-2 text-[#D4AF37]">
@@ -267,7 +267,7 @@ const Navbar = () => {
       </aside>
 
       {/* ---------- Top bar ---------- */}
-      <header className="sticky top-0 z-30 h-14 border-b border-stone-200 bg-white">
+      <header className="sticky top-0 z-30 h-16 md:h-20 border-b border-stone-200 bg-white">
         {/* Mobile expanded search (replaces the bar while open) */}
         {!isOwner && mobileSearchOpen ? (
           <form onSubmit={handleSearch} className="flex h-full items-center gap-2 px-2 sm:hidden">
@@ -310,12 +310,12 @@ const Navbar = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search restaurants, cuisines, cities"
-                  className="h-10 min-w-0 flex-1 rounded-l-full border border-stone-300 bg-white pl-5 pr-3 text-sm text-stone-800 placeholder:text-stone-400 shadow-inner focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                  className="h-11 min-w-0 flex-1 rounded-l-full border border-stone-300 bg-white pl-5 pr-3 text-sm text-stone-800 placeholder:text-stone-400 shadow-inner focus:border-[#D4AF37] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
                 />
                 <button
                   type="submit"
                   aria-label="Search"
-                  className="flex h-10 w-16 items-center justify-center rounded-r-full border border-l-0 border-stone-300 bg-stone-50 text-stone-700 transition-colors hover:bg-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
+                  className="flex h-11 w-16 items-center justify-center rounded-r-full border border-l-0 border-stone-300 bg-stone-50 text-stone-700 transition-colors hover:bg-stone-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
                 >
                   <Icon d={ICONS.search} className="h-5 w-5" />
                 </button>
@@ -341,7 +341,7 @@ const Navbar = () => {
 
             {isOwner && (
               <>
-                <Link to="/owner/restaurants/new" className="hidden lg:inline-flex inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-4 py-2 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200">
+                <Link to="/owner/restaurants/new" className="hidden lg:inline-flex inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-5 py-2.5 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200">
                   <Icon d={ICONS.plus} className="h-4 w-4 text-[#D4AF37]" />
                   Add a Restaurant
                 </Link>
@@ -350,7 +350,7 @@ const Navbar = () => {
                   <button
                     onClick={handleReviewOrders}
                     disabled={loadingPending && ownerRestaurants.length === 0}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-4 py-2 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200 disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-5 py-2.5 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200 disabled:opacity-60"
                   >
                     <Icon d={ICONS.orders} className="h-4 w-4 text-[#D4AF37]" />
                     Review orders
@@ -386,7 +386,7 @@ const Navbar = () => {
 
                 <Link
                   to="/owner"
-                  className="hidden lg:inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md"
+                  className="hidden lg:inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md"
                 >
                   <Icon d={ICONS.restaurants} className="h-4 w-4 text-[#D4AF37]" />
                   My Restaurants
@@ -399,7 +399,7 @@ const Navbar = () => {
                 <button
                   onClick={() => setMenuOpen((p) => !p)}
                   aria-label="Account menu"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-stone-900 text-xs font-semibold text-white ring-2 ring-[#D4AF37]/40 transition-shadow hover:ring-[#D4AF37] focus:outline-none focus-visible:ring-[#D4AF37]"
+                  className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-stone-900 text-sm font-semibold text-white ring-2 ring-[#D4AF37]/40 transition-shadow hover:ring-[#D4AF37] focus:outline-none focus-visible:ring-[#D4AF37]"
                 >
                   {initials}
                 </button>
@@ -442,7 +442,7 @@ const Navbar = () => {
             ) : (
               <Link
                 to="/login"
-                className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full border border-stone-300 px-3 text-sm font-medium text-[#8a6d12] transition-colors hover:border-[#D4AF37] hover:bg-amber-50"
+                className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full border border-stone-300 px-3 text-sm font-medium text-[#8a6d12] transition-colors hover:border-[#D4AF37] hover:bg-amber-50"
               >
                 <Icon d={ICONS.user} className="h-5 w-5" />
                 Sign in
