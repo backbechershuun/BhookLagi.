@@ -249,13 +249,6 @@ const Navbar = () => {
             { action: "review", label: "Review orders", icon: ICONS.orders },
           ],
         },
-        {
-          title: "Manage",
-          items: [
-            { to: "/owner/slots", label: "Manage Slots", icon: ICONS.clock },
-            { to: "/owner/reviews", label: "Customer Reviews", icon: ICONS.star },
-          ],
-        },
       ]
     : [
         {
@@ -272,18 +265,19 @@ const Navbar = () => {
             { to: "/offers", label: "Offers & Deals", icon: ICONS.tag },
           ],
         },
-        ...(user
-          ? [
-              {
-                title: "You",
-                items: [
-                  { to: "/my-bookings", label: "My Bookings", icon: ICONS.calendar },
-                  { to: "/favorites", label: "Favourites", icon: ICONS.heart },
-                  { to: "/profile", label: "Profile", icon: ICONS.user },
-                ],
-              },
-            ]
-          : []),
+      ];
+
+  // Right-side account menu (opens from the avatar, YouTube-style). These are NOT repeated in the left drawer.
+  const accountItems = isOwner
+    ? [
+        { to: "/owner/slots", label: "Manage Slots", icon: ICONS.clock },
+        { to: "/owner/reviews", label: "Customer Reviews", icon: ICONS.star },
+        { to: "/profile", label: "Your profile", icon: ICONS.user },
+      ]
+    : [
+        { to: "/my-bookings", label: "My Bookings", icon: ICONS.calendar },
+        { to: "/favorites", label: "Favourites", icon: ICONS.heart },
+        { to: "/profile", label: "Your profile", icon: ICONS.user },
       ];
 
   const renderLogo = (onClick) => (
@@ -332,20 +326,9 @@ const Navbar = () => {
           {renderLogo(() => setDrawerOpen(false))}
         </div>
 
-        {/* Profile block */}
-        <div className="border-b border-stone-200 px-4 pb-4 pt-1">
-          {user ? (
-            <Link to="/profile" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3 rounded-xl p-1 hover:bg-stone-50">
-              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-800 to-stone-950 text-sm font-semibold text-white ring-2 ring-[#D4AF37]/50">
-                {initials}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-stone-900">{user.name}</span>
-                <span className="block truncate text-xs text-stone-500">{user.email}</span>
-                {isOwner && <span className="block text-xs text-amber-700">Owner account</span>}
-              </span>
-            </Link>
-          ) : (
+        {/* Sign-in prompt (guests only) — account details live in the right-side menu */}
+        {!user && (
+          <div className="border-b border-stone-200 px-4 pb-4 pt-1">
             <Link
               to="/login"
               onClick={() => setDrawerOpen(false)}
@@ -356,8 +339,8 @@ const Navbar = () => {
               </span>
               <span className="text-sm font-medium text-stone-800">Sign in to book a table</span>
             </Link>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Feature sections */}
         <div className="flex-1 overflow-y-auto px-3 py-3">
@@ -580,26 +563,33 @@ const Navbar = () => {
                     menuOpen ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
                   }`}
                 >
-                  <div className="flex items-center gap-3 border-b border-stone-100 px-4 py-3.5">
-                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-stone-900 text-sm font-semibold text-white">
+                  {/* Header: big avatar + name + email + profile link */}
+                  <div className="flex items-start gap-4 border-b border-stone-200 px-5 py-4">
+                    <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-800 to-stone-950 text-base font-semibold text-white ring-2 ring-[#D4AF37]/50">
                       {initials}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-stone-900">{user.name}</p>
-                      <p className="truncate text-xs text-stone-500">{user.email}</p>
+                      <p className="truncate text-base font-medium text-stone-900">{user.name}</p>
+                      <p className="truncate text-sm text-stone-500">{user.email}</p>
                       {isOwner && <p className="mt-0.5 text-xs text-amber-700">Owner account</p>}
+                      <Link
+                        to="/profile"
+                        onClick={() => setMenuOpen(false)}
+                        className="mt-1.5 inline-block text-sm font-medium text-[#8a6d12] hover:underline"
+                      >
+                        View your profile
+                      </Link>
                     </div>
                   </div>
 
+                  {/* Account features */}
                   <div className="py-1.5">
-                    <Link to="/my-bookings" onClick={() => setMenuOpen(false)} className={dropdownLink}>
-                      <Icon d={ICONS.calendar} className="h-5 w-5 text-stone-500" />
-                      My Bookings
-                    </Link>
-                    <Link to="/profile" onClick={() => setMenuOpen(false)} className={dropdownLink}>
-                      <Icon d={ICONS.user} className="h-5 w-5 text-stone-500" />
-                      Profile
-                    </Link>
+                    {accountItems.map((item) => (
+                      <Link key={item.label} to={item.to} onClick={() => setMenuOpen(false)} className={dropdownLink}>
+                        <Icon d={item.icon} className="h-5 w-5 text-stone-500" />
+                        {item.label}
+                      </Link>
+                    ))}
                   </div>
                 </div>
               </div>
