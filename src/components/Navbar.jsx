@@ -191,12 +191,17 @@ const Navbar = () => {
       <span className="block h-9 w-9 overflow-hidden rounded-full bg-white ring-2 ring-[#D4AF37]/60">
         <img src="/Icon2.png" alt="" className="h-full w-full object-cover" />
       </span>
-      <img src="/Bhooklagi2.png" alt="BhookLagi" className="hidden h-8 w-auto object-contain sm:block" />
-      {isOwner && (
-        <span className="hidden rounded-md bg-stone-900 px-1.5 py-0.5 text-[10px] font-medium text-[#EBD182] md:inline">
-          Partner
-        </span>
-      )}
+      <div className="hidden flex-col sm:flex">
+        <img src="/Bhooklagi2.png" alt="BhookLagi" className={`w-auto object-contain ${isOwner ? "h-6" : "h-8"}`} />
+        {isOwner && (
+          <span className="mt-0.5 flex w-fit items-center gap-1 rounded-full border border-[#D4AF37]/40 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 py-[2px] pl-1.5 pr-2 text-[8px] font-semibold uppercase leading-none tracking-[0.2em] text-[#EBD182]">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-2 w-2 text-[#D4AF37]">
+              <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4L12 2z" />
+            </svg>
+            Partner Portal
+          </span>
+        )}
+      </div>
     </Link>
   );
 
@@ -326,40 +331,40 @@ const Navbar = () => {
               </button>
             )}
 
+            {!isOwner && (
+              <Link to="/restaurants" className="group relative hidden items-center gap-1.5 text-sm font-medium text-stone-700 md:flex">
+                <Icon d={ICONS.calendar} className="h-4 w-4 text-stone-400 transition-colors group-hover:text-[#D4AF37]" />
+                <span className="transition-colors group-hover:text-stone-900">Restaurants</span>
+                <span className="absolute -bottom-1 left-0 h-[1.5px] w-0 bg-[#D4AF37] transition-all duration-300 group-hover:w-full" />
+              </Link>
+            )}
+
             {isOwner && (
               <>
-                {/* "+ Create" style pill */}
-                <Link
-                  to="/owner/restaurants/new"
-                  className="hidden h-9 items-center gap-1.5 rounded-full bg-stone-100 pl-3 pr-4 text-sm font-medium text-stone-800 transition-colors hover:bg-stone-200 md:inline-flex"
-                >
-                  <Icon d={ICONS.plus} className="h-5 w-5" />
-                  Add restaurant
+                <Link to="/owner/restaurants/new" className="hidden lg:inline-flex inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-4 py-2 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200">
+                  <Icon d={ICONS.plus} className="h-4 w-4 text-[#D4AF37]" />
+                  Add a Restaurant
                 </Link>
 
-                {/* Bell = pending orders */}
-                <div className="relative" ref={manageRef}>
+                <div className="relative hidden lg:block" ref={manageRef}>
                   <button
                     onClick={handleReviewOrders}
                     disabled={loadingPending && ownerRestaurants.length === 0}
-                    aria-label={`Review orders${totalPending ? `, ${totalPending} pending` : ""}`}
-                    title="Review orders"
-                    className={`${iconBtn} disabled:opacity-60`}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-4 py-2 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200 disabled:opacity-60"
                   >
-                    <Icon d={ICONS.bell} />
-                    <Badge count={totalPending} className="absolute right-0.5 top-0.5 ring-2 ring-white" />
+                    <Icon d={ICONS.orders} className="h-4 w-4 text-[#D4AF37]" />
+                    Review orders
+                    <Badge count={totalPending} />
                   </button>
 
                   <div
                     className={`absolute right-0 top-full z-50 mt-2 w-72 origin-top-right overflow-hidden rounded-xl border border-stone-200 bg-white shadow-xl transition-all duration-150 ${
-                      manageMenuOpen
-                        ? "pointer-events-auto scale-100 opacity-100"
-                        : "pointer-events-none scale-95 opacity-0"
+                      manageMenuOpen ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
                     }`}
                   >
                     <div className="border-b border-stone-100 px-4 py-3">
                       <p className="text-sm font-medium text-stone-900">Pending orders</p>
-                      <p className="text-xs text-stone-500">Choose a restaurant</p>
+                      <p className="text-xs text-stone-500">Choose which restaurant to visit</p>
                     </div>
                     <div className="max-h-72 overflow-y-auto py-1">
                       {restaurantsWithPending.map((r) => (
@@ -378,6 +383,14 @@ const Navbar = () => {
                     </div>
                   </div>
                 </div>
+
+                <Link
+                  to="/owner"
+                  className="hidden lg:inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:shadow-md"
+                >
+                  <Icon d={ICONS.restaurants} className="h-4 w-4 text-[#D4AF37]" />
+                  My Restaurants
+                </Link>
               </>
             )}
 
@@ -408,22 +421,13 @@ const Navbar = () => {
                   </div>
 
                   <div className="border-b border-stone-100 py-1.5">
-                    {drawerMain.map((item) => (
-                      <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)} className={dropdownLink}>
-                        <Icon d={item.icon} className="h-5 w-5 text-stone-500" />
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-
-                  <div className="border-b border-stone-100 py-1.5">
-                    <Link to="/help" onClick={() => setMenuOpen(false)} className={dropdownLink}>
-                      <Icon d={ICONS.help} className="h-5 w-5 text-stone-500" />
-                      Help &amp; Support
+                    <Link to="/my-orders" onClick={() => setMenuOpen(false)} className={dropdownLink}>
+                      <Icon d={ICONS.orders} className="h-5 w-5 text-stone-500" />
+                      My Orders
                     </Link>
-                    <Link to="/about" onClick={() => setMenuOpen(false)} className={dropdownLink}>
-                      <Icon d={ICONS.info} className="h-5 w-5 text-stone-500" />
-                      About
+                    <Link to="/profile" onClick={() => setMenuOpen(false)} className={dropdownLink}>
+                      <Icon d={ICONS.user} className="h-5 w-5 text-stone-500" />
+                      Profile
                     </Link>
                   </div>
 
