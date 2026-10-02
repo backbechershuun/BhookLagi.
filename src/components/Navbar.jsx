@@ -5,6 +5,10 @@ import api from "../api/axios.js";
 
 const OWNER_RESTAURANTS_ENDPOINT = "/restaurants/mine";
 
+// Table booking is live. Flip this to true when online food ordering launches
+// and the "Order Food" / "My Orders" links will appear automatically.
+const ORDERS_ENABLED = false;
+
 // Small helper so every icon shares the same stroke style.
 const Icon = ({ d, className = "w-6 h-6" }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden="true">
@@ -246,7 +250,14 @@ const Navbar = () => {
           items: [
             { to: "/owner", label: "My Restaurants", icon: ICONS.restaurants },
             { to: "/owner/restaurants/new", label: "Add a Restaurant", icon: ICONS.plus },
-            { action: "review", label: "Review orders", icon: ICONS.orders },
+            { action: "review", label: "Pending bookings", icon: ICONS.calendar },
+          ],
+        },
+        {
+          title: "Manage",
+          items: [
+            { to: "/owner/slots", label: "Manage Slots", icon: ICONS.clock },
+            { to: "/owner/reviews", label: "Customer Reviews", icon: ICONS.star },
           ],
         },
       ]
@@ -255,6 +266,8 @@ const Navbar = () => {
           items: [
             { to: "/", label: "Home", icon: ICONS.home },
             { to: "/restaurants", label: "Book a Table", icon: ICONS.calendar },
+            // Replace the route below with your real ordering page when you build it.
+            ...(ORDERS_ENABLED ? [{ to: "/order-online", label: "Order Food", icon: ICONS.orders }] : []),
           ],
         },
         {
@@ -267,15 +280,13 @@ const Navbar = () => {
         },
       ];
 
-  // Right-side account menu (opens from the avatar, YouTube-style). These are NOT repeated in the left drawer.
+  // Right-side account menu (opens from the avatar, YouTube-style): personal stuff only.
+  // The left drawer is for getting around (browse, book, run the business) and never repeats these.
   const accountItems = isOwner
-    ? [
-        { to: "/owner/slots", label: "Manage Slots", icon: ICONS.clock },
-        { to: "/owner/reviews", label: "Customer Reviews", icon: ICONS.star },
-        { to: "/profile", label: "Your profile", icon: ICONS.user },
-      ]
+    ? [{ to: "/profile", label: "Your profile", icon: ICONS.user }]
     : [
         { to: "/my-bookings", label: "My Bookings", icon: ICONS.calendar },
+        ...(ORDERS_ENABLED ? [{ to: "/my-orders", label: "My Orders", icon: ICONS.orders }] : []),
         { to: "/favorites", label: "Favourites", icon: ICONS.heart },
         { to: "/profile", label: "Your profile", icon: ICONS.user },
       ];
@@ -506,8 +517,8 @@ const Navbar = () => {
                     disabled={loadingPending && ownerRestaurants.length === 0}
                     className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/30 bg-white text-stone-700 px-5 py-2.5 text-sm font-medium hover:border-[#D4AF37]/60 hover:text-stone-900 hover:bg-stone-50 hover:shadow-sm transition-all duration-200 disabled:opacity-60"
                   >
-                    <Icon d={ICONS.orders} className="h-4 w-4 text-[#D4AF37]" />
-                    Review orders
+                    <Icon d={ICONS.calendar} className="h-4 w-4 text-[#D4AF37]" />
+                    Pending bookings
                     <Badge count={totalPending} />
                   </button>
 
@@ -517,7 +528,7 @@ const Navbar = () => {
                     }`}
                   >
                     <div className="border-b border-stone-100 px-4 py-3">
-                      <p className="text-sm font-medium text-stone-900">Pending orders</p>
+                      <p className="text-sm font-medium text-stone-900">Pending bookings</p>
                       <p className="text-xs text-stone-500">Choose which restaurant to visit</p>
                     </div>
                     <div className="max-h-72 overflow-y-auto py-1">
